@@ -10,6 +10,7 @@ import javax.swing.SwingUtilities;
 import java.awt.AWTException;
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.SystemTray;
 import java.awt.Toolkit;
@@ -65,21 +66,23 @@ public class NotificationService {
      */
     @PostConstruct
     public void initSystemTray() {
-        if (!SystemTray.isSupported()) {
-            log.warn("NotificationService: SystemTray is NOT supported on this platform. " +
-                     "Toast notifications will fall back to console output only.");
-            return;
-        }
         try {
+            if (GraphicsEnvironment.isHeadless()) {
+                log.info("NotificationService: Running in headless server environment. Native SystemTray skipped.");
+                return;
+            }
+            if (!SystemTray.isSupported()) {
+                log.warn("NotificationService: SystemTray is NOT supported on this platform. Toast notifications will fall back to console output only.");
+                return;
+            }
             BufferedImage icon = buildTrayIconImage();
             trayIcon = new TrayIcon(icon, "AI Study Assistant");
             trayIcon.setImageAutoSize(true);
             trayIcon.setToolTip("AI Personalized Timetable & Study Assistant");
             SystemTray.getSystemTray().add(trayIcon);
             log.info("NotificationService: ✅ SystemTray icon initialized successfully.");
-        } catch (AWTException e) {
-            log.warn("NotificationService: Failed to add icon to SystemTray: {}. " +
-                     "Continuing with console-only notifications.", e.getMessage());
+        } catch (Throwable t) {
+            log.warn("NotificationService: Native SystemTray could not be initialized on this host ({}). Running with console-only notifications.", t.getMessage());
             trayIcon = null;
         }
     }
@@ -90,10 +93,12 @@ public class NotificationService {
      */
     @PreDestroy
     public void cleanupSystemTray() {
-        if (trayIcon != null && SystemTray.isSupported()) {
-            SystemTray.getSystemTray().remove(trayIcon);
-            log.info("NotificationService: SystemTray icon removed on shutdown.");
-        }
+        try {
+            if (!GraphicsEnvironment.isHeadless() && trayIcon != null && SystemTray.isSupported()) {
+                SystemTray.getSystemTray().remove(trayIcon);
+                log.info("NotificationService: SystemTray icon removed on shutdown.");
+            }
+        } catch (Throwable ignored) {}
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -151,6 +156,11 @@ public class NotificationService {
      * @return {@code true} if user clicks "Yes / Join", {@code false} if "No / Skip"
      */
     public boolean askMeetingConfirmation(String username, String meetingTitle, String startTime) {
+        if (GraphicsEnvironment.isHeadless()) {
+            log.info("NotificationService: Running in headless server environment. Auto-confirming Zoom meeting '{}' at {}", meetingTitle, startTime);
+            return true;
+        }
+
         // Beep to draw attention before the dialog appears
         try {
             Toolkit.getDefaultToolkit().beep();

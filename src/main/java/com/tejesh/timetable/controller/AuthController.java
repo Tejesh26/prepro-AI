@@ -5,6 +5,7 @@ import com.tejesh.timetable.model.User;
 import com.tejesh.timetable.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
@@ -48,6 +50,16 @@ public class AuthController {
             return "redirect:/dashboard";
         }
         return "redirect:/login";
+    }
+
+    /**
+     * Health check endpoint for cloud hosting providers (Render, Railway, AWS, Docker).
+     * Always returns HTTP 200 OK.
+     */
+    @GetMapping("/health")
+    @ResponseBody
+    public ResponseEntity<String> healthCheck() {
+        return ResponseEntity.ok("UP");
     }
 
     /**

@@ -20,7 +20,17 @@ public class TimetableApplication {
 
     public static void main(String[] args) {
         log.info("Starting AI Personalized Timetable Web Application on http://localhost:8082 ...");
-        System.setProperty("java.awt.headless", "false");
+
+        // On Linux cloud containers without an X11 display, run safely in headless mode.
+        // On desktop environments with an available display, allow native desktop features.
+        String os = System.getProperty("os.name", "").toLowerCase();
+        String display = System.getenv("DISPLAY");
+        if (os.contains("win") || (display != null && !display.isBlank())) {
+            System.setProperty("java.awt.headless", "false");
+        } else {
+            System.setProperty("java.awt.headless", "true");
+        }
+
         SpringApplication.run(TimetableApplication.class, args);
     }
 }
