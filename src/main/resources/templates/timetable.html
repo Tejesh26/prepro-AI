@@ -557,15 +557,21 @@
                                 <div th:if="${slot != null}">
 
                                     <!-- 1A: STUDY Slot -->
-                                    <div th:if="${slot.slotType.name() == 'STUDY'}" class="slot-card slot-study">
+                                    <div th:if="${slot.slotType.name() == 'STUDY'}" class="slot-card slot-study"
+                                         th:onclick="'activateSlotAlarm(' + ${slot.id} + ', \'' + ${#strings.escapeJavaScript(slot.subject)} + '\', \'' + ${#strings.escapeJavaScript(slot.topic)} + '\', \'' + ${slot.startTime} + '\', \'' + ${slot.endTime} + '\')'"
+                                         style="cursor: pointer;"
+                                         th:title="'Click to focus Companion & trigger 10-Min Smart Alarm for ' + ${slot.subject}">
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="slot-badge">STUDY</span>
+                                                <span class="slot-badge" th:text="${slot.subject}">STUDY</span>
                                                 <small class="text-muted fw-bold" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
                                             </div>
                                             <div class="fw-bold text-dark small" th:text="${slot.topic}">Topic Name</div>
                                         </div>
-                                        <div class="mt-2 text-end">
+                                        <div class="mt-2 d-flex align-items-center justify-content-between">
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.7rem;">
+                                                <i class="bi bi-bell-fill me-1"></i>Focus Alarm
+                                            </span>
                                             <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>30 Min</small>
                                         </div>
                                     </div>
@@ -720,7 +726,7 @@
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-dark">Or Enter Custom Subject:</label>
-                    <input type="text" id="modalCustomSubject" class="form-control" placeholder="e.g. Mathematics, Physics, Chemistry">
+                    <input type="text" id="modalCustomSubject" class="form-control" placeholder="Enter any subject name">
                 </div>
                 <div class="mb-3">
                     <label class="form-label fw-semibold small text-dark">Specific Topic / Activity (Optional):</label>
@@ -1124,33 +1130,105 @@
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 7. Interactive Alarm Simulation & Live Demo
+    // 7. Dynamic Subject Resolver & Interactive Alarm System
     // ──────────────────────────────────────────────────────────────────────────
-    function testSmartAlarm() {
-        // 1. Play Tone Chime
+
+    function getActiveSubjectFromTimetable() {
+        if (companionState.currentSlot && companionState.currentSlot.subject) {
+            return companionState.currentSlot.subject;
+        }
+        if (companionState.upcomingSlot && companionState.upcomingSlot.subject) {
+            return companionState.upcomingSlot.subject;
+        }
+        if (companionState.availableSubjects && companionState.availableSubjects.length > 0) {
+            return companionState.availableSubjects[0];
+        }
+        // Extract the first subject header from the timetable table
+        const rowHeaders = document.querySelectorAll('.timetable-table tbody th');
+        for (let th of rowHeaders) {
+            const text = th.innerText.trim();
+            if (text && !text.includes('Break') && !text.includes('Meeting') && !text.includes('☕') && !text.includes('🎥')) {
+                return text;
+            }
+        }
+        return "your scheduled subject";
+    }
+
+    function getActiveTopicFromTimetable() {
+        if (companionState.currentSlot && companionState.currentSlot.topic) {
+            return companionState.currentSlot.topic;
+        }
+        if (companionState.upcomingSlot && companionState.upcomingSlot.topic) {
+            return companionState.upcomingSlot.topic;
+        }
+        return "Key Chapter";
+    }
+
+    // Triggered when a student clicks ANY subject block on the master timetable grid
+    function activateSlotAlarm(slotId, subject, topic, startTime, endTime) {
+        companionState.currentSlot = {
+            id: slotId,
+            subject: subject,
+            topic: topic,
+            startTime: startTime,
+            endTime: endTime,
+            slotType: 'STUDY',
+            remainingMinutes: 10,
+            percentCompleted: 66
+        };
+
+        const badge = document.getElementById('activeSlotBadge');
+        badge.className = 'badge bg-success text-white px-2 py-1 shadow-sm';
+        badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${subject} (${startTime} - ${endTime})`;
+
+        const progressWrapper = document.getElementById('sessionProgressWrapper');
+        const progressSubjectLabel = document.getElementById('progressSubjectLabel');
+        const progressCountdown = document.getElementById('progressCountdown');
+        const progressBar = document.getElementById('sessionProgressBar');
+
+        progressWrapper.style.display = 'block';
+        progressSubjectLabel.innerText = `${subject} • ${topic}`;
+        progressCountdown.innerText = `⏳ 10 mins left (Ends at ${endTime})`;
+        progressBar.style.width = '66%';
+
+        document.getElementById('extend30Btn').disabled = false;
+        document.getElementById('extend60Btn').disabled = false;
+        document.getElementById('switchBtn').disabled = false;
+        document.getElementById('breakBtn').disabled = false;
+
+        // Trigger smart alarm for this specific timetable subject
+        triggerAlarmForSubject(subject, topic, endTime);
+
+        // Smoothly scroll to the Companion Hub
+        document.getElementById('companionCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function triggerAlarmForSubject(subject, topic, endTime) {
         playHarmonicChime();
 
-        // 2. Animate card
         const card = document.getElementById('companionCard');
         card.classList.add('alert-mode');
         setTimeout(() => card.classList.remove('alert-mode'), 8000);
 
-        // 3. Spoken Voice Prompt
-        const activeSub = (companionState.currentSlot && companionState.currentSlot.subject) ? companionState.currentSlot.subject : "Mathematics";
-        const testPrompt = `Hey! You have 9 minutes left in ${activeSub}. Do you want to continue this subject, switch to another subject, or take a break?`;
+        const prompt = `Hey! You have 10 minutes left in ${subject} (${topic}). Do you want to continue this subject until you're bored, switch to another subject, or take a break?`;
 
-        document.getElementById('coachTitle').innerText = '🔔 10-Minute Smart Alarm Triggered:';
-        document.getElementById('coachMessage').innerText = `⚡ ${testPrompt}`;
+        document.getElementById('coachTitle').innerText = `🔔 10-Minute Smart Alarm: ${subject}`;
+        document.getElementById('coachMessage').innerText = `⚡ ${prompt}`;
 
-        speakText(testPrompt);
+        speakText(prompt);
 
-        // 4. Desktop Notification
         if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification('⏰ PREPRO AI 10-Min Smart Alarm', {
-                body: testPrompt,
+            new Notification(`⏰ 10-Min Smart Alarm: ${subject}`, {
+                body: prompt,
                 icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
             });
         }
+    }
+
+    function testSmartAlarm() {
+        const sub = getActiveSubjectFromTimetable();
+        const top = getActiveTopicFromTimetable();
+        triggerAlarmForSubject(sub, top, "Upcoming Block");
     }
 
     // Start Poller: runs immediately and then every 8 seconds

@@ -132,33 +132,13 @@
             </div>
 
             <div id="subjectRowsContainer">
-                <!-- Subject Row 1: Physics -->
+                <!-- Subject Row 1 -->
                 <div class="row g-2 align-items-center mb-2 subject-row">
                     <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" value="Physics" required placeholder="Subject Name">
+                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Physics, History)" required>
                     </div>
                     <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" value="Electrostatics, Motion in a Straight Line, Gravitation, Thermodynamics" placeholder="Topics / Chapters">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="proficiency" class="form-select">
-                            <option value="POOR">POOR (Weak - 50% Time)</option>
-                            <option value="AVERAGE">AVERAGE (Moderate - 30%)</option>
-                            <option value="GOOD" selected>GOOD (Comfortable - 20%)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
-                    </div>
-                </div>
-
-                <!-- Subject Row 2: Chemistry -->
-                <div class="row g-2 align-items-center mb-2 subject-row">
-                    <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" value="Chemistry" required placeholder="Subject Name">
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" value="Chemical Bonding, Periodic Table, Equilibrium, Carbon Compounds" placeholder="Topics / Chapters">
+                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters (comma-separated)">
                     </div>
                     <div class="col-md-3">
                         <select name="proficiency" class="form-select">
@@ -172,13 +152,33 @@
                     </div>
                 </div>
 
-                <!-- Subject Row 3: Mathematics -->
+                <!-- Subject Row 2 -->
                 <div class="row g-2 align-items-center mb-2 subject-row">
                     <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" value="Mathematics" required placeholder="Subject Name">
+                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Chemistry, Polity)">
                     </div>
                     <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" value="Matrices, Straight Lines, Sequences and Series, Integration" placeholder="Topics / Chapters">
+                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters">
+                    </div>
+                    <div class="col-md-3">
+                        <select name="proficiency" class="form-select">
+                            <option value="POOR">POOR (Weak - 50% Time)</option>
+                            <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
+                            <option value="GOOD">GOOD (Comfortable - 20%)</option>
+                        </select>
+                    </div>
+                    <div class="col-md-1 text-center">
+                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
+                    </div>
+                </div>
+
+                <!-- Subject Row 3 -->
+                <div class="row g-2 align-items-center mb-2 subject-row">
+                    <div class="col-md-3">
+                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Mathematics, Biology)">
+                    </div>
+                    <div class="col-md-5">
+                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters">
                     </div>
                     <div class="col-md-3">
                         <select name="proficiency" class="form-select">

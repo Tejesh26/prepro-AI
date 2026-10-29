@@ -252,13 +252,18 @@ public class AIBrainService {
         sb.append("  ✗ Explanatory text before or after the JSON\n");
         sb.append("  ✗ Comments inside the JSON\n\n");
 
+        String sampleSubject = (!subjects.isEmpty()) ? subjects.get(0).getSubjectName() : "Core Subject";
+        String sampleTopic = (!subjects.isEmpty() && subjects.get(0).getTopics() != null && !subjects.get(0).getTopics().isBlank())
+                ? subjects.get(0).getTopics().split("[,;]")[0].trim()
+                : "Primary Chapter";
+
         sb.append("Each element of the JSON array must have EXACTLY these fields:\n");
         sb.append("{\n");
         sb.append("  \"dayOfWeek\":   \"Monday\"          (String – full English day name),\n");
         sb.append("  \"startTime\":   \"16:00\"           (String – 24-hour HH:mm format),\n");
         sb.append("  \"endTime\":     \"16:30\"           (String – 24-hour HH:mm format),\n");
-        sb.append("  \"subject\":     \"Mathematics\"     (String – subject name, or empty string for BREAK),\n");
-        sb.append("  \"topic\":       \"Matrices\"        (String – specific topic, or \"Rest\" for BREAK),\n");
+        sb.append(String.format("  \"subject\":     \"%s\"     (String – subject name from the student's list, or empty string for BREAK),\n", sampleSubject));
+        sb.append(String.format("  \"topic\":       \"%s\"        (String – specific topic, or \"Rest\" for BREAK),\n", sampleTopic));
         sb.append("  \"slotType\":    \"STUDY\"           (String – one of: STUDY, BREAK, ZOOM_MEETING),\n");
         sb.append("  \"meetingLink\": null               (String or null – only for ZOOM_MEETING slots)\n");
         sb.append("}\n\n");
