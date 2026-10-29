@@ -1,5 +1,6 @@
 package com.tejesh.timetable.controller;
 
+import com.tejesh.timetable.dto.CompanionStatusDto;
 import com.tejesh.timetable.model.ProficiencyLevel;
 import com.tejesh.timetable.model.SlotType;
 import com.tejesh.timetable.model.SubjectInput;
@@ -423,6 +424,114 @@ public class WebController {
             redirectAttributes.addFlashAttribute("successMessage", "Desktop audio beep and system alert sent!");
         }
         return "redirect:/timetable";
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 7. Live Study Companion & Dynamic Timetable APIs
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @GetMapping("/api/companion/status")
+    @ResponseBody
+    public ResponseEntity<CompanionStatusDto> getCompanionStatus(
+            @RequestParam(value = "day", required = false) String clientDay,
+            @RequestParam(value = "time", required = false) String clientTime,
+            Authentication authentication,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session, authentication);
+        if (user == null) {
+            return ResponseEntity.status(401).build();
+        }
+
+        CompanionStatusDto status = timetableManagerService.getCurrentAndUpcomingStatus(user, clientDay, clientTime);
+        return ResponseEntity.ok(status);
+    }
+
+    @PostMapping("/api/companion/extend")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> extendSlot(
+            @RequestParam("slotId") Long slotId,
+            @RequestParam(value = "minutes", defaultValue = "30") int minutes,
+            Authentication authentication,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session, authentication);
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
+        }
+
+        try {
+            TimetableSlot updated = timetableManagerService.extendSlot(user, slotId, minutes);
+            log.info("WebController: Successfully extended slot {} by {}m for {}", slotId, minutes, user.getUsername());
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "slotId", updated.getId(),
+                    "endTime", updated.getEndTime(),
+                    "message", "Extended " + updated.getSubject() + " until " + updated.getEndTime() + "!"
+            ));
+        } catch (Exception e) {
+            log.error("WebController: Failed to extend slot", e);
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/companion/switch")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> switchSlotSubject(
+            @RequestParam("slotId") Long slotId,
+            @RequestParam("subject") String newSubject,
+            @RequestParam(value = "topic", required = false) String newTopic,
+            Authentication authentication,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session, authentication);
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
+        }
+
+        try {
+            TimetableSlot updated = timetableManagerService.switchSlotSubject(user, slotId, newSubject, newTopic);
+            log.info("WebController: Successfully switched slot {} to '{}' for {}", slotId, newSubject, user.getUsername());
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "slotId", updated.getId(),
+                    "subject", updated.getSubject(),
+                    "topic", updated.getTopic(),
+                    "message", "Switched session to " + updated.getSubject() + " (" + updated.getTopic() + ")!"
+            ));
+        } catch (Exception e) {
+            log.error("WebController: Failed to switch slot subject", e);
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
+    }
+
+    @PostMapping("/api/companion/break")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> convertToBreak(
+            @RequestParam("slotId") Long slotId,
+            @RequestParam(value = "minutes", defaultValue = "10") int minutes,
+            Authentication authentication,
+            HttpSession session) {
+
+        User user = getLoggedInUser(session, authentication);
+        if (user == null) {
+            return ResponseEntity.status(401).body(Map.of("success", false, "error", "Unauthorized"));
+        }
+
+        try {
+            TimetableSlot updated = timetableManagerService.convertSlotToBreak(user, slotId, minutes);
+            log.info("WebController: Successfully converted slot {} to break for {}", slotId, user.getUsername());
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "slotId", updated.getId(),
+                    "slotType", "BREAK",
+                    "endTime", updated.getEndTime(),
+                    "message", "Break started! Enjoy your " + minutes + "-minute cognitive refresh."
+            ));
+        } catch (Exception e) {
+            log.error("WebController: Failed to convert slot to break", e);
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", e.getMessage()));
+        }
     }
 
     private String capitalize(String s) {

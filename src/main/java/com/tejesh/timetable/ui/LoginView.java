@@ -69,7 +69,7 @@ public class LoginView extends StackPane {
         Label userLabel = new Label("Student Username");
         userLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #334155;");
 
-        TextField usernameField = new TextField("Tejesh");
+        TextField usernameField = new TextField();
         usernameField.setPromptText("Enter your username");
         usernameField.setStyle("-fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #cbd5e1; " +
                               "-fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14px;");
@@ -79,7 +79,6 @@ public class LoginView extends StackPane {
         passLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 13px; -fx-text-fill: #334155;");
 
         PasswordField passwordField = new PasswordField();
-        passwordField.setText("password123");
         passwordField.setPromptText("Enter password");
         passwordField.setStyle("-fx-padding: 10; -fx-background-radius: 8; -fx-border-color: #cbd5e1; " +
                               "-fx-border-radius: 8; -fx-border-width: 1.5; -fx-font-size: 14px;");

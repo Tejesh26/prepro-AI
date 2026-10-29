@@ -93,8 +93,8 @@ public class AutomationSchedulerService {
 
             if (slot.getSlotType() == SlotType.STUDY) {
                 notificationService.sendDesktopAlert(
-                        "⏰ Upcoming Study Session",
-                        "Hey " + username + ", your " + slot.getSubject() + " (" + slot.getTopic() + ") session starts in 10 minutes!"
+                        "⏰ 10-Min Smart Alarm",
+                        "Hey " + username + ", your " + slot.getSubject() + " session starts in 10 minutes! Ready to study, or would you like to continue, switch subjects, or take a break?"
                 );
                 processedAlerts.add(alertKey);
             } else if (slot.getSlotType() == SlotType.ZOOM_MEETING) {

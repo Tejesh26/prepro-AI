@@ -213,6 +213,72 @@
             border-radius: 8px;
             transition: all 0.2s ease;
         }
+
+        /* Smart Study Companion Card */
+        .companion-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
+            border: 2px solid #86efac;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1);
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 24px;
+        }
+
+        .companion-card.alert-mode {
+            background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
+            border-color: #f97316;
+            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.2);
+            animation: pulse-border 2s infinite;
+        }
+
+        @keyframes pulse-border {
+            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
+        }
+
+        .pulse-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+            animation: pulse-ring 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+
+        @keyframes pulse-ring {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .companion-bubble {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-left: 5px solid #2563eb;
+            border-radius: 12px;
+            padding: 14px 18px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
+
+        .btn-companion {
+            font-weight: 600;
+            font-size: 0.85rem;
+            padding: 8px 16px;
+            border-radius: 8px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .btn-companion:hover {
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
@@ -261,6 +327,91 @@
     <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
         <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- SMART STUDY COMPANION & ADAPTIVE ALARM CARD -->
+    <!-- ========================================================================= -->
+    <div id="companionCard" class="card companion-card p-4">
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+            <div class="d-flex align-items-center gap-2">
+                <span class="pulse-dot"></span>
+                <span class="fw-bold text-dark text-uppercase small" style="letter-spacing: 0.5px;">
+                    Smart Study Companion &bull; Dynamic Alarm System
+                </span>
+                <span id="activeSlotBadge" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                    Connecting Companion...
+                </span>
+            </div>
+
+            <!-- Companion Controls: Clock, Voice Coach, Test Alarm -->
+            <div class="d-flex flex-wrap align-items-center gap-2">
+                <span class="badge bg-white text-dark border px-3 py-2 fw-semibold shadow-sm">
+                    <i class="bi bi-clock me-1 text-primary"></i> <span id="companionLiveClock">--:--:--</span>
+                </span>
+                <button id="toggleVoiceBtn" class="btn btn-sm btn-outline-primary fw-semibold" onclick="toggleVoiceCoach()" title="Enable or mute speech alerts">
+                    <i id="voiceIcon" class="bi bi-volume-up-fill me-1"></i> Voice Coach: <span id="voiceStatusText">ON</span>
+                </button>
+                <button class="btn btn-sm btn-outline-warning fw-semibold" onclick="testSmartAlarm()" title="Hear and test the 10-minute alarm and voice prompt right now">
+                    <i class="bi bi-bell-fill me-1"></i> Test 10-Min Alarm
+                </button>
+                <button id="notifyPermBtn" class="btn btn-sm btn-outline-secondary fw-semibold" onclick="requestNotificationPermission()">
+                    <i class="bi bi-app-indicator me-1"></i> Desktop Alerts
+                </button>
+            </div>
+        </div>
+
+        <!-- Companion Interactive Body -->
+        <div class="row align-items-center g-3">
+            <div class="col-lg-8">
+                <!-- AI Coach Dialogue Bubble -->
+                <div class="companion-bubble mb-2" id="coachBubble">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="fs-3 text-primary"><i class="bi bi-chat-heart-fill"></i></div>
+                        <div>
+                            <div class="fw-bold text-dark mb-1" id="coachTitle">AI Study Assistant:</div>
+                            <div class="text-secondary" id="coachMessage">
+                                Analyzing your timetable and real-time schedule...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Live Progress Bar (for current session) -->
+                <div id="sessionProgressWrapper" class="mt-2" style="display: none;">
+                    <div class="d-flex justify-content-between small text-muted mb-1">
+                        <span id="progressSubjectLabel">Subject Focus</span>
+                        <span id="progressCountdown" class="fw-bold text-primary">-- mins left</span>
+                    </div>
+                    <div class="progress" style="height: 8px;">
+                        <div id="sessionProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 50%;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4 text-lg-end text-start">
+                <div class="small text-muted fw-bold text-uppercase mb-2">Instant Schedule Actions:</div>
+                <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-start">
+                    <!-- Keep Going / Extend Buttons -->
+                    <button id="extend30Btn" class="btn btn-sm btn-success btn-companion" onclick="extendCurrentSlot(30)" title="Extend this subject session by 30 minutes">
+                        <i class="bi bi-plus-circle-fill"></i> Keep Going (+30m)
+                    </button>
+                    <button id="extend60Btn" class="btn btn-sm btn-outline-success btn-companion" onclick="extendCurrentSlot(60)" title="Extend this subject session by 1 hour">
+                        <i class="bi bi-lightning-charge-fill"></i> +1 Hour
+                    </button>
+
+                    <!-- Switch Subject Button (if bored or needs change) -->
+                    <button id="switchBtn" class="btn btn-sm btn-outline-primary btn-companion" onclick="openSwitchModal()" title="Bored of this subject? Switch to another immediately!">
+                        <i class="bi bi-arrow-repeat"></i> Switch Subject
+                    </button>
+
+                    <!-- Take a Break Button -->
+                    <button id="breakBtn" class="btn btn-sm btn-outline-warning btn-companion text-dark" onclick="takeBreakNow(10)" title="Need a breather? Take a 10-minute cognitive break">
+                        <i class="bi bi-cup-hot-fill"></i> Take Break (10m)
+                    </button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Stats Summary Row -->
@@ -549,8 +700,463 @@
 
 </div>
 
+<!-- Modal for Switching Subject -->
+<div class="modal fade" id="switchSubjectModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-arrow-repeat text-primary me-2"></i>Switch Current Subject</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="text-muted small">
+                    Bored with the current subject or want to change your focus? Choose another subject to study right now, and PREPRO AI will update your master timetable.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-dark">Select From Your Subjects:</label>
+                    <select id="modalSubjectSelect" class="form-select">
+                        <option value="">-- Choose Subject --</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-dark">Or Enter Custom Subject:</label>
+                    <input type="text" id="modalCustomSubject" class="form-control" placeholder="e.g. Mathematics, Physics, Chemistry">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold small text-dark">Specific Topic / Activity (Optional):</label>
+                    <input type="text" id="modalTopicInput" class="form-control" placeholder="e.g. Problem Solving, Revision, Mock Test">
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary fw-semibold px-4" onclick="confirmSwitchSubject()">
+                    <i class="bi bi-check2-circle me-1"></i> Update Timetable
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Bootstrap 5 Bundle JS CDN -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Live Study Companion Engine -->
+<script>
+    // Global State
+    let companionState = {
+        currentSlot: null,
+        upcomingSlot: null,
+        availableSubjects: [],
+        voiceCoachEnabled: true,
+        lastSpokenKey: null
+    };
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 1. Digital Clock & Initialization
+    // ──────────────────────────────────────────────────────────────────────────
+    function updateClock() {
+        const now = new Date();
+        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const clockEl = document.getElementById('companionLiveClock');
+        if (clockEl) clockEl.innerText = timeStr;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 2. Audio Chime Synthesizer (Web Audio API - 100% Native, No MP3 Needed)
+    // ──────────────────────────────────────────────────────────────────────────
+    function playHarmonicChime() {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            if (!AudioContext) return;
+            const ctx = new AudioContext();
+
+            // 3-Tone Gentle Marimba / Chime (C5 -> E5 -> G5)
+            const notes = [523.25, 659.25, 783.99];
+            notes.forEach((freq, index) => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.14);
+
+                gain.gain.setValueAtTime(0, ctx.currentTime + index * 0.14);
+                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + index * 0.14 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + index * 0.14 + 0.9);
+
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                osc.start(ctx.currentTime + index * 0.14);
+                osc.stop(ctx.currentTime + index * 0.14 + 1.0);
+            });
+        } catch (e) {
+            console.warn("Audio chime error:", e);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 3. Web Speech Synthesis (Spoken AI Coach)
+    // ──────────────────────────────────────────────────────────────────────────
+    function speakText(text) {
+        if (!companionState.voiceCoachEnabled || !('speechSynthesis' in window)) return;
+        try {
+            window.speechSynthesis.cancel(); // Stop any pending speech
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.0;
+            utterance.pitch = 1.05;
+            utterance.lang = 'en-US';
+
+            // Pick a pleasant natural voice if available
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            window.speechSynthesis.speak(utterance);
+        } catch (e) {
+            console.warn("Speech synthesis error:", e);
+        }
+    }
+
+    function toggleVoiceCoach() {
+        companionState.voiceCoachEnabled = !companionState.voiceCoachEnabled;
+        const icon = document.getElementById('voiceIcon');
+        const text = document.getElementById('voiceStatusText');
+        const btn = document.getElementById('toggleVoiceBtn');
+
+        if (companionState.voiceCoachEnabled) {
+            icon.className = 'bi bi-volume-up-fill me-1';
+            text.innerText = 'ON';
+            btn.className = 'btn btn-sm btn-outline-primary fw-semibold';
+            speakText("Voice coach enabled. I'll remind you 10 minutes before transitions.");
+        } else {
+            icon.className = 'bi bi-volume-mute-fill me-1';
+            text.innerText = 'OFF';
+            btn.className = 'btn btn-sm btn-outline-secondary fw-semibold';
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 4. HTML5 Desktop Notification
+    // ──────────────────────────────────────────────────────────────────────────
+    function requestNotificationPermission() {
+        if (!('Notification' in window)) {
+            alert('Desktop notifications are not supported by your browser.');
+            return;
+        }
+        Notification.requestPermission().then(permission => {
+            const btn = document.getElementById('notifyPermBtn');
+            if (permission === 'granted') {
+                btn.className = 'btn btn-sm btn-success fw-semibold';
+                btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Alerts Allowed';
+                new Notification('PREPRO AI Companion', {
+                    body: 'Smart study alarms & 10-minute warning alerts are now active!',
+                    icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
+                });
+            } else {
+                btn.className = 'btn btn-sm btn-outline-danger fw-semibold';
+                btn.innerHTML = '<i class="bi bi-x-circle me-1"></i> Blocked';
+            }
+        });
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 5. Polling & Real-Time Companion Status
+    // ──────────────────────────────────────────────────────────────────────────
+    function getClientDayName() {
+        return new Date().toLocaleDateString('en-US', { weekday: 'long' });
+    }
+
+    function getClientTime24() {
+        const d = new Date();
+        const hh = String(d.getHours()).padStart(2, '0');
+        const mm = String(d.getMinutes()).padStart(2, '0');
+        return `${hh}:${mm}`;
+    }
+
+    async function fetchCompanionStatus() {
+        try {
+            const day = getClientDayName();
+            const time = getClientTime24();
+            const res = await fetch(`/api/companion/status?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`);
+            if (!res.ok) return;
+
+            const data = await res.json();
+            renderCompanionUI(data);
+        } catch (e) {
+            console.warn("Companion fetch error:", e);
+        }
+    }
+
+    function renderCompanionUI(data) {
+        companionState.currentSlot = data.currentSlot;
+        companionState.upcomingSlot = data.upcomingSlot;
+        if (data.availableSubjects && data.availableSubjects.length > 0) {
+            companionState.availableSubjects = data.availableSubjects;
+        }
+
+        const card = document.getElementById('companionCard');
+        const badge = document.getElementById('activeSlotBadge');
+        const coachTitle = document.getElementById('coachTitle');
+        const coachMsg = document.getElementById('coachMessage');
+        const progressWrapper = document.getElementById('sessionProgressWrapper');
+        const progressBar = document.getElementById('sessionProgressBar');
+        const progressCountdown = document.getElementById('progressCountdown');
+        const progressSubjectLabel = document.getElementById('progressSubjectLabel');
+
+        const extend30Btn = document.getElementById('extend30Btn');
+        const extend60Btn = document.getElementById('extend60Btn');
+        const switchBtn = document.getElementById('switchBtn');
+        const breakBtn = document.getElementById('breakBtn');
+
+        // Update Coach Dialogue
+        if (data.smartPrompt) {
+            coachMsg.innerText = data.smartPrompt;
+        }
+
+        // Active slot state
+        if (data.currentSlot) {
+            badge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2 py-1';
+            badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${data.currentSlot.subject || data.currentSlot.slotType} (${data.currentSlot.startTime} - ${data.currentSlot.endTime})`;
+
+            coachTitle.innerText = data.currentSlot.slotType === 'BREAK' ? '☕ Brain Break Mode:' : '📖 Active Focus Session:';
+
+            progressWrapper.style.display = 'block';
+            progressSubjectLabel.innerText = `${data.currentSlot.subject || 'Session'} • ${data.currentSlot.topic || ''}`;
+            progressCountdown.innerText = `⏳ ${data.currentSlot.remainingMinutes} min${data.currentSlot.remainingMinutes === 1 ? '' : 's'} remaining`;
+            progressBar.style.width = `${data.currentSlot.percentCompleted}%`;
+
+            extend30Btn.disabled = false;
+            extend60Btn.disabled = false;
+            switchBtn.disabled = false;
+            breakBtn.disabled = false;
+        } else if (data.upcomingSlot) {
+            badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1';
+            badge.innerHTML = `<i class="bi bi-hourglass-split me-1"></i> Next: ${data.upcomingSlot.subject || data.upcomingSlot.slotType} at ${data.upcomingSlot.startTime}`;
+
+            coachTitle.innerText = '⏳ Upcoming Session:';
+            progressWrapper.style.display = 'none';
+
+            extend30Btn.disabled = true;
+            extend60Btn.disabled = true;
+            switchBtn.disabled = false; // can switch upcoming slot
+            breakBtn.disabled = true;
+        } else {
+            badge.className = 'badge bg-secondary-subtle text-secondary px-2 py-1';
+            badge.innerHTML = 'All Sessions Complete';
+            coachTitle.innerText = '🎉 Day Complete:';
+            progressWrapper.style.display = 'none';
+
+            extend30Btn.disabled = true;
+            extend60Btn.disabled = true;
+            switchBtn.disabled = true;
+            breakBtn.disabled = true;
+        }
+
+        // 10-Minute Warning Trigger
+        if (data.warningActive) {
+            card.classList.add('alert-mode');
+
+            // Unique key to prevent constant repeating within the same minute
+            const alertKey = `${data.alertType}_${data.currentTime}_${(data.currentSlot ? data.currentSlot.id : (data.upcomingSlot ? data.upcomingSlot.id : ''))}`;
+
+            if (companionState.lastSpokenKey !== alertKey) {
+                companionState.lastSpokenKey = alertKey;
+
+                // Play Audio Chime
+                playHarmonicChime();
+
+                // Speak via Voice Coach
+                if (data.speechText) {
+                    setTimeout(() => speakText(data.speechText), 700);
+                }
+
+                // Show Desktop Notification
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification('PREPRO AI Smart Alarm', {
+                        body: data.smartPrompt,
+                        icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
+                    });
+                }
+            }
+        } else {
+            card.classList.remove('alert-mode');
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 6. Interactive Timetable Actions (Extend, Switch, Break)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    function getTargetSlotId() {
+        if (companionState.currentSlot && companionState.currentSlot.id) {
+            return companionState.currentSlot.id;
+        }
+        if (companionState.upcomingSlot && companionState.upcomingSlot.id) {
+            return companionState.upcomingSlot.id;
+        }
+        return null;
+    }
+
+    async function extendCurrentSlot(minutes) {
+        const slotId = getTargetSlotId();
+        if (!slotId) {
+            alert("No active or upcoming slot to extend right now.");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("slotId", slotId);
+            formData.append("minutes", minutes);
+
+            const res = await fetch("/api/companion/extend", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                playHarmonicChime();
+                speakText(`Great flow! Extended ${minutes} more minutes until ${data.endTime}.`);
+                // Smooth refresh to re-render grid
+                setTimeout(() => window.location.reload(), 1200);
+            } else {
+                alert("Could not extend slot: " + (data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error("Extend error:", e);
+        }
+    }
+
+    function openSwitchModal() {
+        const select = document.getElementById('modalSubjectSelect');
+        select.innerHTML = '<option value="">-- Select from your subjects --</option>';
+
+        if (companionState.availableSubjects && companionState.availableSubjects.length > 0) {
+            companionState.availableSubjects.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.innerText = s;
+                select.appendChild(opt);
+            });
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('switchSubjectModal'));
+        modal.show();
+    }
+
+    async function confirmSwitchSubject() {
+        const slotId = getTargetSlotId();
+        if (!slotId) {
+            alert("No active slot found to switch.");
+            return;
+        }
+
+        const selectVal = document.getElementById('modalSubjectSelect').value.trim();
+        const customVal = document.getElementById('modalCustomSubject').value.trim();
+        const topicVal = document.getElementById('modalTopicInput').value.trim();
+
+        const finalSubject = customVal !== "" ? customVal : selectVal;
+        if (!finalSubject) {
+            alert("Please choose or enter a subject name.");
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("slotId", slotId);
+            formData.append("subject", finalSubject);
+            if (topicVal) formData.append("topic", topicVal);
+
+            const res = await fetch("/api/companion/switch", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                playHarmonicChime();
+                speakText(`Subject switched to ${finalSubject}. Happy studying!`);
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                alert("Switch failed: " + (data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error("Switch error:", e);
+        }
+    }
+
+    async function takeBreakNow(minutes) {
+        const slotId = getTargetSlotId();
+        if (!slotId) {
+            alert("No active slot to convert to a break.");
+            return;
+        }
+
+        if (!confirm(`Take a ${minutes}-minute cognitive break now? PREPRO AI will mark this slot for relaxation.`)) {
+            return;
+        }
+
+        try {
+            const formData = new FormData();
+            formData.append("slotId", slotId);
+            formData.append("minutes", minutes);
+
+            const res = await fetch("/api/companion/break", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await res.json();
+            if (data.success) {
+                playHarmonicChime();
+                speakText(`Break started! Enjoy your ${minutes} minutes of rest.`);
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                alert("Break action failed: " + (data.error || "Unknown error"));
+            }
+        } catch (e) {
+            console.error("Break error:", e);
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 7. Interactive Alarm Simulation & Live Demo
+    // ──────────────────────────────────────────────────────────────────────────
+    function testSmartAlarm() {
+        // 1. Play Tone Chime
+        playHarmonicChime();
+
+        // 2. Animate card
+        const card = document.getElementById('companionCard');
+        card.classList.add('alert-mode');
+        setTimeout(() => card.classList.remove('alert-mode'), 8000);
+
+        // 3. Spoken Voice Prompt
+        const activeSub = (companionState.currentSlot && companionState.currentSlot.subject) ? companionState.currentSlot.subject : "Mathematics";
+        const testPrompt = `Hey! You have 9 minutes left in ${activeSub}. Do you want to continue this subject, switch to another subject, or take a break?`;
+
+        document.getElementById('coachTitle').innerText = '🔔 10-Minute Smart Alarm Triggered:';
+        document.getElementById('coachMessage').innerText = `⚡ ${testPrompt}`;
+
+        speakText(testPrompt);
+
+        // 4. Desktop Notification
+        if ('Notification' in window && Notification.permission === 'granted') {
+            new Notification('⏰ PREPRO AI 10-Min Smart Alarm', {
+                body: testPrompt,
+                icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
+            });
+        }
+    }
+
+    // Start Poller: runs immediately and then every 8 seconds
+    fetchCompanionStatus();
+    setInterval(fetchCompanionStatus, 8000);
+</script>
 
 </body>
 </html>

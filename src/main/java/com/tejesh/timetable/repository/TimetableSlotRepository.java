@@ -39,5 +39,15 @@ public interface TimetableSlotRepository extends JpaRepository<TimetableSlot, Lo
      * @return list of matching slots across all users; empty if none
      */
     List<TimetableSlot> findByDayOfWeekIgnoreCaseAndStartTime(String dayOfWeek, String startTime);
+
+    /**
+     * Finds slots for a specific user on a specific day ordered by start time.
+     */
+    List<TimetableSlot> findByUserAndDayOfWeekIgnoreCaseOrderByStartTimeAsc(User user, String dayOfWeek);
+
+    /**
+     * Securely finds a single slot by ID belonging to the given user.
+     */
+    java.util.Optional<TimetableSlot> findByIdAndUser(Long id, User user);
 }
 

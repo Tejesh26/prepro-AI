@@ -106,9 +106,11 @@ public class SecurityConfig {
                 .permitAll()
             )
             .csrf(csrf -> csrf
-                // CSRF is enabled by default for all production forms.
-                // Solely bypass embedded H2 console if accessed in local dev profile:
-                .ignoringRequestMatchers(new AntPathRequestMatcher("/h2-console/**"))
+                // Bypass embedded H2 console and authenticated REST API endpoints:
+                .ignoringRequestMatchers(
+                    new AntPathRequestMatcher("/h2-console/**"),
+                    new AntPathRequestMatcher("/api/**")
+                )
             )
             .headers(headers -> headers
                 .frameOptions(HeadersConfigurer.FrameOptionsConfig::sameOrigin)

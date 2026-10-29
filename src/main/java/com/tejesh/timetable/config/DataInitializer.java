@@ -11,11 +11,10 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 /**
- * <h2>DataInitializer – Demo Account Setup & Password Hash Upgrader</h2>
+ * <h2>DataInitializer – Production Environment Initializer</h2>
  *
- * <p>Ensures that the default student account ({@code Tejesh}) is available
- * with an encrypted BCrypt password so that fresh checkouts and presentations
- * run out-of-the-box.
+ * <p>Demo accounts have been removed for production security.
+ * All users must register their own personal account via {@code /register}.
  */
 @Component
 public class DataInitializer implements CommandLineRunner {
@@ -23,29 +22,20 @@ public class DataInitializer implements CommandLineRunner {
     private static final Logger log = LoggerFactory.getLogger(DataInitializer.class);
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
 
-    public DataInitializer(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public DataInitializer(UserRepository userRepository) {
         this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
     }
 
     @Override
     public void run(String... args) {
-        Optional<User> existing = userRepository.findByUsername("Tejesh");
-
-        if (existing.isEmpty()) {
-            User demoUser = new User("Tejesh", passwordEncoder.encode("password123"), "JEE Advanced");
-            userRepository.save(demoUser);
-            log.info("DataInitializer: Initialized default student user 'Tejesh' with BCrypt hashed password.");
+        // Explicitly remove demo account 'Tejesh' if present from prior runs
+        Optional<User> demoUser = userRepository.findByUsername("Tejesh");
+        if (demoUser.isPresent()) {
+            userRepository.delete(demoUser.get());
+            log.info("DataInitializer: Cleaned up legacy demo account 'Tejesh'. Production is ready for user registrations.");
         } else {
-            User user = existing.get();
-            // Upgrade legacy plain-text password to BCrypt hash if necessary
-            if (!user.getPassword().startsWith("$2a$") && !user.getPassword().startsWith("$2b$")) {
-                user.setPassword(passwordEncoder.encode("password123"));
-                userRepository.save(user);
-                log.info("DataInitializer: Upgraded student 'Tejesh' password to BCrypt hash.");
-            }
+            log.info("DataInitializer: Production ready. No demo accounts seeded.");
         }
     }
 }

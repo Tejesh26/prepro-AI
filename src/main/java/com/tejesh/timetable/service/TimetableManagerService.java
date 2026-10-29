@@ -1,5 +1,6 @@
 package com.tejesh.timetable.service;
 
+import com.tejesh.timetable.dto.CompanionStatusDto;
 import com.tejesh.timetable.model.SlotType;
 import com.tejesh.timetable.model.SubjectInput;
 import com.tejesh.timetable.model.TimetableSlot;
@@ -15,9 +16,21 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * <h2>TimetableManagerService – Central Workflow Coordinator</h2>
@@ -328,5 +341,253 @@ public class TimetableManagerService {
         } catch (Exception e) {
             log.error("TimetableManagerService: Failed to export PDF: {}", e.getMessage(), e);
         }
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  4. CREATIVE DYNAMIC TIMETABLE & SMART ALARM COMPANION
+    // ══════════════════════════════════════════════════════════════════════════
+
+    private static final DateTimeFormatter HH_MM = DateTimeFormatter.ofPattern("HH:mm");
+
+    /**
+     * Calculates the real-time status of the student's study day, including:
+     * - Current active slot & remaining minutes
+     * - Upcoming slot starting in 1-10 minutes (pre-event smart alarm trigger)
+     * - Dynamic prompts letting the user extend, switch, or break
+     */
+    public CompanionStatusDto getCurrentAndUpcomingStatus(User user, String clientDay, String clientTime) {
+        CompanionStatusDto dto = new CompanionStatusDto();
+
+        String day = (clientDay != null && !clientDay.isBlank())
+                ? clientDay
+                : LocalDate.now().getDayOfWeek().getDisplayName(TextStyle.FULL, Locale.ENGLISH);
+
+        String timeStr = (clientTime != null && !clientTime.isBlank())
+                ? clientTime
+                : LocalTime.now().format(HH_MM);
+
+        dto.setCurrentDay(day);
+        dto.setCurrentTime(timeStr);
+
+        LocalTime now;
+        try {
+            now = LocalTime.parse(timeStr);
+        } catch (Exception e) {
+            now = LocalTime.now();
+            timeStr = now.format(HH_MM);
+            dto.setCurrentTime(timeStr);
+        }
+
+        List<TimetableSlot> allUserSlots = slotRepository.findByUserOrderByDayOfWeekAscStartTimeAsc(user);
+        if (allUserSlots.isEmpty()) {
+            dto.setHasTimetable(false);
+            dto.setSmartPrompt("No timetable generated yet. Head over to the Input Dashboard to create your AI study plan!");
+            dto.setSpeechText("");
+            dto.setWarningActive(false);
+            dto.setAlertType("IDLE");
+            return dto;
+        }
+
+        dto.setHasTimetable(true);
+
+        // Collect available subjects for user
+        List<String> subjects = allUserSlots.stream()
+                .filter(s -> s.getSlotType() == SlotType.STUDY && s.getSubject() != null && !s.getSubject().isBlank())
+                .map(TimetableSlot::getSubject)
+                .distinct()
+                .collect(Collectors.toList());
+        dto.setAvailableSubjects(subjects);
+
+        // Filter slots for the current active day
+        final String matchDay = day;
+        List<TimetableSlot> daySlots = allUserSlots.stream()
+                .filter(s -> s.getDayOfWeek() != null && s.getDayOfWeek().equalsIgnoreCase(matchDay))
+                .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
+                .collect(Collectors.toList());
+
+        TimetableSlot activeSlot = null;
+        TimetableSlot upcomingSlot = null;
+        long closestStartsIn = Long.MAX_VALUE;
+
+        for (TimetableSlot s : daySlots) {
+            try {
+                LocalTime start = LocalTime.parse(s.getStartTime());
+                LocalTime end = LocalTime.parse(s.getEndTime());
+
+                // Check active slot (inclusive start, exclusive end)
+                if ((now.equals(start) || now.isAfter(start)) && now.isBefore(end)) {
+                    activeSlot = s;
+                }
+
+                // Check upcoming slot starting in the future
+                if (start.isAfter(now)) {
+                    long diff = Duration.between(now, start).toMinutes();
+                    if (diff < closestStartsIn) {
+                        closestStartsIn = diff;
+                        upcomingSlot = s;
+                    }
+                }
+            } catch (Exception ignored) {}
+        }
+
+        // Populate current slot details
+        if (activeSlot != null) {
+            LocalTime start = LocalTime.parse(activeSlot.getStartTime());
+            LocalTime end = LocalTime.parse(activeSlot.getEndTime());
+            long remaining = Duration.between(now, end).toMinutes();
+            long total = Duration.between(start, end).toMinutes();
+            int percent = (total > 0) ? Math.min(100, Math.max(0, (int) (((double) (total - remaining) / total) * 100))) : 0;
+
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", activeSlot.getId());
+            map.put("subject", activeSlot.getSubject());
+            map.put("topic", activeSlot.getTopic());
+            map.put("startTime", activeSlot.getStartTime());
+            map.put("endTime", activeSlot.getEndTime());
+            map.put("slotType", activeSlot.getSlotType().name());
+            map.put("remainingMinutes", Math.max(0, remaining));
+            map.put("percentCompleted", percent);
+            dto.setCurrentSlot(map);
+        }
+
+        // Populate upcoming slot details
+        if (upcomingSlot != null) {
+            Map<String, Object> map = new HashMap<>();
+            map.put("id", upcomingSlot.getId());
+            map.put("subject", upcomingSlot.getSubject());
+            map.put("topic", upcomingSlot.getTopic());
+            map.put("startTime", upcomingSlot.getStartTime());
+            map.put("endTime", upcomingSlot.getEndTime());
+            map.put("slotType", upcomingSlot.getSlotType().name());
+            map.put("startsInMinutes", closestStartsIn);
+            dto.setUpcomingSlot(map);
+        }
+
+        // Build Smart Alerts & Contextual Prompts
+        String username = user.getUsername();
+
+        // 1. Pre-Slot Alert: 1 to 10 minutes before upcoming slot
+        if (upcomingSlot != null && closestStartsIn >= 1 && closestStartsIn <= 10) {
+            dto.setWarningActive(true);
+            dto.setAlertType("UPCOMING_SLOT");
+            String sub = (upcomingSlot.getSubject() != null && !upcomingSlot.getSubject().isBlank())
+                    ? upcomingSlot.getSubject()
+                    : upcomingSlot.getSlotType().name();
+
+            dto.setSmartPrompt(String.format("⏰ Heads up %s! Your next session [%s] starts in %d minutes (%s - %s). Are you ready to dive into %s, or do you want to switch or adjust?",
+                    username, sub, closestStartsIn, upcomingSlot.getStartTime(), upcomingSlot.getEndTime(),
+                    (upcomingSlot.getTopic() != null ? upcomingSlot.getTopic() : "study topic")));
+
+            dto.setSpeechText(String.format("Hey %s! Your %s session starts in %d minutes. Are you ready to continue, switch subjects, or take a break?",
+                    username, sub, closestStartsIn));
+
+        // 2. Ending Soon Alert: Active slot has 1 to 10 minutes remaining
+        } else if (activeSlot != null) {
+            LocalTime end = LocalTime.parse(activeSlot.getEndTime());
+            long remaining = Duration.between(now, end).toMinutes();
+
+            if (remaining >= 0 && remaining <= 10) {
+                dto.setWarningActive(true);
+                dto.setAlertType("SLOT_ENDING_SOON");
+                String sub = (activeSlot.getSubject() != null && !activeSlot.getSubject().isBlank())
+                        ? activeSlot.getSubject()
+                        : "current session";
+
+                if (activeSlot.getSlotType() == SlotType.STUDY) {
+                    dto.setSmartPrompt(String.format("⚡ Smart Focus Alert, %s: Only %d minute%s left in %s! In the flow? Extend this subject until you're bored (+30m / +60m), switch to another subject, or take a brain break!",
+                            username, remaining, (remaining == 1 ? "" : "s"), sub));
+
+                    dto.setSpeechText(String.format("Hey %s, you have %d minutes left in %s. Do you want to continue this subject, switch subjects, or take a break?",
+                            username, remaining, sub));
+                } else {
+                    dto.setSmartPrompt(String.format("☕ Break time ending in %d minute%s! Drink water and get ready for your next study block.",
+                            remaining, (remaining == 1 ? "" : "s")));
+                    dto.setSpeechText(String.format("Hey %s, %d minutes left in your break.", username, remaining));
+                }
+            } else {
+                dto.setWarningActive(false);
+                dto.setAlertType("ACTIVE_STUDY");
+                dto.setSmartPrompt(String.format("📖 Studying %s: %s. %d minutes remaining until %s.",
+                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, activeSlot.getEndTime()));
+                dto.setSpeechText("");
+            }
+        } else if (upcomingSlot != null) {
+            dto.setWarningActive(false);
+            dto.setAlertType("BETWEEN_SLOTS");
+            dto.setSmartPrompt(String.format("✨ Up next on %s: %s starting at %s (in %d minutes).",
+                    day, upcomingSlot.getSubject(), upcomingSlot.getStartTime(), closestStartsIn));
+            dto.setSpeechText("");
+        } else {
+            dto.setWarningActive(false);
+            dto.setAlertType("IDLE");
+            dto.setSmartPrompt(String.format("🎉 Great job %s! All scheduled study sessions for %s are complete.", username, day));
+            dto.setSpeechText("");
+        }
+
+        return dto;
+    }
+
+    /**
+     * Extends a timetable slot by {@code extraMinutes} (e.g. 30m or 60m),
+     * automatically shifting subsequent slots on that day to avoid conflicts.
+     */
+    @Transactional
+    public TimetableSlot extendSlot(User user, Long slotId, int extraMinutes) {
+        log.info("TimetableManagerService: Extending slot {} by {} minutes for user '{}'", slotId, extraMinutes, user.getUsername());
+        TimetableSlot slot = slotRepository.findByIdAndUser(slotId, user)
+                .orElseThrow(() -> new IllegalArgumentException("Slot not found or unauthorized"));
+
+        LocalTime oldEnd = LocalTime.parse(slot.getEndTime());
+        LocalTime newEnd = oldEnd.plusMinutes(extraMinutes);
+        slot.setEndTime(newEnd.format(HH_MM));
+
+        // Push forward any subsequent slots on the same day that start before or at the new end time
+        List<TimetableSlot> daySlots = slotRepository.findByUserAndDayOfWeekIgnoreCaseOrderByStartTimeAsc(user, slot.getDayOfWeek());
+        for (TimetableSlot other : daySlots) {
+            if (other.getId().equals(slot.getId())) continue;
+
+            LocalTime otherStart = LocalTime.parse(other.getStartTime());
+            if (!otherStart.isBefore(oldEnd)) {
+                LocalTime otherEnd = LocalTime.parse(other.getEndTime());
+                other.setStartTime(otherStart.plusMinutes(extraMinutes).format(HH_MM));
+                other.setEndTime(otherEnd.plusMinutes(extraMinutes).format(HH_MM));
+                slotRepository.save(other);
+            }
+        }
+
+        return slotRepository.save(slot);
+    }
+
+    /**
+     * Swaps the subject of an existing slot (e.g., if the user doesn't like Math right now,
+     * they can switch to Physics or Chemistry).
+     */
+    @Transactional
+    public TimetableSlot switchSlotSubject(User user, Long slotId, String newSubject, String newTopic) {
+        log.info("TimetableManagerService: Switching slot {} to subject '{}' for user '{}'", slotId, newSubject, user.getUsername());
+        TimetableSlot slot = slotRepository.findByIdAndUser(slotId, user)
+                .orElseThrow(() -> new IllegalArgumentException("Slot not found or unauthorized"));
+
+        slot.setSlotType(SlotType.STUDY);
+        slot.setSubject(newSubject);
+        slot.setTopic((newTopic != null && !newTopic.isBlank()) ? newTopic : "Active Study Session");
+        return slotRepository.save(slot);
+    }
+
+    /**
+     * Converts an active or upcoming slot into a Cognitive Break.
+     */
+    @Transactional
+    public TimetableSlot convertSlotToBreak(User user, Long slotId, int breakMinutes) {
+        log.info("TimetableManagerService: Converting slot {} to break ({}m) for user '{}'", slotId, breakMinutes, user.getUsername());
+        TimetableSlot slot = slotRepository.findByIdAndUser(slotId, user)
+                .orElseThrow(() -> new IllegalArgumentException("Slot not found or unauthorized"));
+
+        slot.setSlotType(SlotType.BREAK);
+        slot.setSubject("");
+        slot.setTopic("☕ Cognitive Break / Mind Reset (" + breakMinutes + "m)");
+        LocalTime start = LocalTime.parse(slot.getStartTime());
+        slot.setEndTime(start.plusMinutes(breakMinutes).format(HH_MM));
+        return slotRepository.save(slot);
     }
 }
