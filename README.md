@@ -90,11 +90,7 @@ A production-ready, psychology-backed study planner and automated timetable gene
 
 ---
 
-## 🔑 Default Demo Account
 
-- **Username:** `Tejesh`
-- **Password:** `password123`
-- Or click **Create an Account** to register a new student account.
 
 ---
 
