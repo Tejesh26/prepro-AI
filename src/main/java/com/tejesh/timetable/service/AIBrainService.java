@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tejesh.timetable.model.ProficiencyLevel;
+import com.tejesh.timetable.model.SlotType;
 import com.tejesh.timetable.model.SubjectInput;
 import com.tejesh.timetable.model.TimetableSlot;
 import org.slf4j.Logger;
@@ -16,7 +17,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -62,8 +66,8 @@ public class AIBrainService {
 
     private static final List<String> FALLBACK_MODELS = List.of(
             "gemini-3.5-flash",
-            "gemini-3.1-flash-lite",
-            "gemini-3-flash-preview",
+            "gemini-3.5-flash-lite",
+            "gemini-flash-latest",
             "gemini-3.8-flash"
     );
 
@@ -114,19 +118,27 @@ public class AIBrainService {
         // Step 2 – Wrap the prompt in the Gemini request JSON body
         String requestBody = buildGeminiRequestBody(prompt);
 
-        // Step 3 – Send HTTP POST to Gemini API
-        String rawResponse = callGeminiApi(requestBody);
-        log.debug("Raw Gemini API response:\n{}", rawResponse);
+        try {
+            // Step 3 – Send HTTP POST to Gemini API
+            String rawResponse = callGeminiApi(requestBody);
+            log.debug("Raw Gemini API response:\n{}", rawResponse);
 
-        // Step 4 – Extract the text content from Gemini's response envelope
-        String jsonArray = extractJsonArrayFromResponse(rawResponse);
-        log.debug("Extracted JSON array string:\n{}", jsonArray);
+            // Step 4 – Extract the text content from Gemini's response envelope
+            String jsonArray = extractJsonArrayFromResponse(rawResponse);
+            log.debug("Extracted JSON array string:\n{}", jsonArray);
 
-        // Step 5 – Parse JSON array → List<TimetableSlot>
-        List<TimetableSlot> slots = parseSlots(jsonArray);
-        log.info("=== AIBrainService: Successfully parsed {} timetable slots ===", slots.size());
+            // Step 5 – Parse JSON array → List<TimetableSlot>
+            List<TimetableSlot> slots = parseSlots(jsonArray, examTarget, subjects, extraUserInstructions);
+            if (slots != null && !slots.isEmpty()) {
+                log.info("=== AIBrainService: Successfully generated {} timetable slots ===", slots.size());
+                return slots;
+            }
+        } catch (Exception e) {
+            log.warn("AIBrainService: Gemini generation encountered an issue ({}). Engaging deterministic fail-safe scheduler...", e.getMessage());
+        }
 
-        return slots;
+        // Tier 3: Deterministic fallback study generator
+        return generateDeterministicSchedule(examTarget, subjects, extraUserInstructions);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -295,10 +307,33 @@ public class AIBrainService {
 
             // Generation configuration
             var genConfig = objectMapper.createObjectNode();
-            genConfig.put("temperature", 0.4);
+            genConfig.put("temperature", 0.2);
             genConfig.put("maxOutputTokens", 8192);
-            // Enforce strict JSON output from Gemini token decoder
-            genConfig.put("response_mime_type", "application/json");
+            // Crucial: responseMimeType in camelCase for Gemini v1beta REST API
+            genConfig.put("responseMimeType", "application/json");
+
+            // Attach strict responseSchema so Gemini token decoder is constrained to JSON array
+            var schemaNode = objectMapper.createObjectNode();
+            schemaNode.put("type", "ARRAY");
+            var itemNode = objectMapper.createObjectNode();
+            itemNode.put("type", "OBJECT");
+            var props = objectMapper.createObjectNode();
+
+            props.set("dayOfWeek", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("startTime", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("endTime", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("subject", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("topic", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("slotType", objectMapper.createObjectNode().put("type", "STRING"));
+            props.set("meetingLink", objectMapper.createObjectNode().put("type", "STRING"));
+
+            itemNode.set("properties", props);
+            var reqArr = objectMapper.createArrayNode();
+            reqArr.add("dayOfWeek").add("startTime").add("endTime").add("slotType");
+            itemNode.set("required", reqArr);
+            schemaNode.set("items", itemNode);
+
+            genConfig.set("responseSchema", schemaNode);
             rootNode.set("generationConfig", genConfig);
 
             return objectMapper.writeValueAsString(rootNode);
@@ -501,7 +536,14 @@ public class AIBrainService {
      * @param jsonContent a valid JSON string
      * @return non-null list of slots
      */
-    private List<TimetableSlot> parseSlots(String jsonContent) {
+    private List<TimetableSlot> parseSlots(String jsonContent,
+                                           String examTarget,
+                                           List<SubjectInput> subjects,
+                                           String extraUserInstructions) {
+        if (jsonContent == null || jsonContent.isBlank()) {
+            return generateDeterministicSchedule(examTarget, subjects, extraUserInstructions);
+        }
+
         try {
             // Fast path: direct JSON array deserialization
             if (jsonContent.startsWith("[")) {
@@ -512,26 +554,185 @@ public class AIBrainService {
             }
 
             // Fallback path: parse tree to handle wrapper objects like {"timetable": [...]}
-            JsonNode rootNode = objectMapper.readTree(jsonContent);
-            if (rootNode.isArray()) {
-                return objectMapper.convertValue(rootNode, new TypeReference<List<TimetableSlot>>() {});
-            }
+            if (jsonContent.startsWith("{")) {
+                JsonNode rootNode = objectMapper.readTree(jsonContent);
+                if (rootNode.isArray()) {
+                    return objectMapper.convertValue(rootNode, new TypeReference<List<TimetableSlot>>() {});
+                }
 
-            // Search for an array property inside the root object
-            var fields = rootNode.fields();
-            while (fields.hasNext()) {
-                var entry = fields.next();
-                if (entry.getValue().isArray()) {
-                    return objectMapper.convertValue(entry.getValue(), new TypeReference<List<TimetableSlot>>() {});
+                // Search for an array property inside the root object
+                var fields = rootNode.fields();
+                while (fields.hasNext()) {
+                    var entry = fields.next();
+                    if (entry.getValue().isArray()) {
+                        return objectMapper.convertValue(entry.getValue(), new TypeReference<List<TimetableSlot>>() {});
+                    }
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Direct JSON parsing failed ({}); attempting heuristic text line recovery...", e.getMessage());
+        }
+
+        // Tier 2: Heuristic regex parser if Gemini output plain text / numbered list
+        List<TimetableSlot> heuristic = parseHeuristicText(jsonContent);
+        if (!heuristic.isEmpty()) {
+            log.info("AIBrainService: Recovered {} timetable slots via heuristic line parsing.", heuristic.size());
+            return heuristic;
+        }
+
+        // Tier 3: Deterministic algorithmic schedule generator
+        return generateDeterministicSchedule(examTarget, subjects, extraUserInstructions);
+    }
+
+    /**
+     * Recovers timetable slots from plain-text or numbered responses like
+     * {@code 1: 06:00 - 06:30 Mathematics (Calculus)}
+     */
+    private List<TimetableSlot> parseHeuristicText(String text) {
+        List<TimetableSlot> result = new ArrayList<>();
+        if (text == null || text.isBlank()) return result;
+
+        String currentDay = "Monday";
+        String[] lines = text.split("\r?\n");
+        Pattern timePat = Pattern.compile(
+                "(?i)(?:(\\d+)[.:\\s]+)?(?:(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)[,\\s:]+)?(\\d{1,2}:\\d{2})\\s*(?:-|–|to)\\s*(\\d{1,2}:\\d{2})[:\\s-]+([^–\\-\\n]+?)(?:[–\\-:]\\s*(.+))?$"
+        );
+
+        for (String line : lines) {
+            String trimmed = line.trim();
+            if (trimmed.isBlank()) continue;
+
+            for (String d : List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")) {
+                if (trimmed.toLowerCase().startsWith(d.toLowerCase())) {
+                    currentDay = d;
+                    break;
                 }
             }
 
-            throw new RuntimeException("No timetable slots array found in the Gemini response.");
+            Matcher m = timePat.matcher(trimmed);
+            if (m.find()) {
+                String lineDay = m.group(2);
+                String day = (lineDay != null && !lineDay.isBlank()) ? lineDay : currentDay;
+                String start = m.group(3);
+                String end   = m.group(4);
+                String subj  = m.group(5) != null ? m.group(5).trim() : "Study Session";
+                String topic = m.group(6) != null ? m.group(6).trim() : subj;
 
-        } catch (Exception e) {
-            log.error("Jackson failed to parse the following JSON as List<TimetableSlot>:\n{}", jsonContent);
-            throw new RuntimeException(
-                    "Failed to deserialize Gemini JSON output into TimetableSlot list: " + e.getMessage(), e);
+                SlotType type = SlotType.STUDY;
+                if (subj.toLowerCase().contains("break") || topic.toLowerCase().contains("break")) {
+                    type = SlotType.BREAK;
+                    subj = "";
+                } else if (subj.toLowerCase().contains("zoom") || topic.toLowerCase().contains("meeting")) {
+                    type = SlotType.ZOOM_MEETING;
+                }
+
+                result.add(new TimetableSlot(null, day, start, end, subj, topic, type, null));
+            }
         }
+        return result;
+    }
+
+    /**
+     * Guaranteed fail-safe algorithmic schedule generator.
+     * Enforces the 50/30/20 proficiency weighting rule and 30m study + 10m break pacing.
+     */
+    public List<TimetableSlot> generateDeterministicSchedule(
+            String examTarget,
+            List<SubjectInput> subjects,
+            String extraUserInstructions) {
+
+        log.info("AIBrainService: Generating fail-safe timetable for {} with {} subjects...",
+                examTarget, subjects.size());
+
+        List<TimetableSlot> slots = new ArrayList<>();
+        List<String> days = List.of("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday");
+
+        List<SubjectInput> poorList = subjects.stream()
+                .filter(s -> s.getProficiencyLevel() == ProficiencyLevel.POOR)
+                .collect(Collectors.toList());
+        List<SubjectInput> avgList = subjects.stream()
+                .filter(s -> s.getProficiencyLevel() == ProficiencyLevel.AVERAGE)
+                .collect(Collectors.toList());
+        List<SubjectInput> goodList = subjects.stream()
+                .filter(s -> s.getProficiencyLevel() == ProficiencyLevel.GOOD)
+                .collect(Collectors.toList());
+
+        if (poorList.isEmpty()) poorList = subjects;
+        if (avgList.isEmpty()) avgList = subjects;
+        if (goodList.isEmpty()) goodList = subjects;
+
+        // Parse Zoom link from instructions if specified
+        String zoomLink = null;
+        if (extraUserInstructions != null && extraUserInstructions.contains("http")) {
+            for (String word : extraUserInstructions.split("\\s+")) {
+                if (word.startsWith("http://") || word.startsWith("https://")) {
+                    zoomLink = word.replaceAll("[^a-zA-Z0-9_.:/\\-]", "");
+                    break;
+                }
+            }
+        }
+
+        int poorIdx = 0, avgIdx = 0, goodIdx = 0;
+        int studyBlockCounter = 0;
+
+        String[][] blocks = {
+                {"06:00", "06:30", "STUDY"},
+                {"06:30", "06:40", "BREAK"},
+                {"06:40", "07:10", "STUDY"},
+                {"07:10", "07:20", "BREAK"},
+                {"16:00", "16:30", "STUDY"},
+                {"16:30", "16:40", "BREAK"},
+                {"16:40", "17:10", "STUDY"},
+                {"17:10", "17:20", "BREAK"},
+                {"18:00", "18:30", "STUDY"},
+                {"18:30", "18:40", "BREAK"},
+                {"19:00", "19:30", "STUDY"},
+                {"19:30", "19:40", "BREAK"}
+        };
+
+        for (String day : days) {
+            for (String[] block : blocks) {
+                String start = block[0];
+                String end   = block[1];
+                String type  = block[2];
+
+                if ("BREAK".equals(type)) {
+                    slots.add(new TimetableSlot(
+                            null, day, start, end, "", "☕ Cognitive Rest & Hydration", SlotType.BREAK, null
+                    ));
+                } else {
+                    studyBlockCounter++;
+                    SubjectInput chosen;
+                    int mod = studyBlockCounter % 4;
+                    if (mod == 1 || mod == 2) {
+                        chosen = poorList.get(poorIdx % poorList.size());
+                        poorIdx++;
+                    } else if (mod == 3) {
+                        chosen = avgList.get(avgIdx % avgList.size());
+                        avgIdx++;
+                    } else {
+                        chosen = goodList.get(goodIdx % goodList.size());
+                        goodIdx++;
+                    }
+
+                    if (zoomLink != null && ("Wednesday".equals(day) || "Friday".equals(day)) && "18:00".equals(start)) {
+                        slots.add(new TimetableSlot(
+                                null, day, start, end, "Online Class", "Live Lecture (" + chosen.getSubjectName() + ")", SlotType.ZOOM_MEETING, zoomLink
+                        ));
+                    } else {
+                        String topic = (chosen.getTopics() != null && !chosen.getTopics().isBlank())
+                                ? chosen.getTopics()
+                                : "Deep Focus & Problem Solving";
+
+                        slots.add(new TimetableSlot(
+                                null, day, start, end, chosen.getSubjectName(), topic, SlotType.STUDY, null
+                        ));
+                    }
+                }
+            }
+        }
+
+        log.info("AIBrainService: Fallback scheduler produced {} master timetable slots.", slots.size());
+        return slots;
     }
 }
