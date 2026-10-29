@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!--  Project Coordinates                                                 -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <groupId>com.tejesh</groupId>
+    <artifactId>timetable</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <packaging>jar</packaging>
+
+    <name>AI Personalized Timetable &amp; Study Assistant</name>
+    <description>
+        A pure-Java Spring Boot + JavaFX desktop application that uses the Gemini
+        API to generate psychology-backed, personalized JEE study timetables.
+    </description>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!--  Spring Boot Parent (manages transitive dependency versions)         -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <parent>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-starter-parent</artifactId>
+        <!-- Upgraded from 3.2.5 → 3.4.5 to pick up maven-compiler-plugin 3.13.0+
+             which correctly handles JDK 23/24/25/26 internal APIs (TypeTag fix). -->
+        <version>3.4.5</version>
+        <relativePath/>
+    </parent>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!--  Global Properties                                                   -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <properties>
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- Library versions – centralised here so they are easy to bump -->
+        <javafx.version>21.0.2</javafx.version>
+        <pdfbox.version>3.0.2</pdfbox.version>
+        <poi.version>5.2.5</poi.version>
+        <!-- Lombok REMOVED: no released Lombok version supports Java 26's javac
+             internals (TypeTag::UNKNOWN crash). All model classes use hand-written
+             getters/setters so Lombok was never functionally needed. -->
+        <jackson.version>2.17.1</jackson.version>
+    </properties>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!--  Dependencies                                                        -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <dependencies>
+
+        <!-- ── Spring Boot Core & Web Starter ────────────────────────── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- ── Thymeleaf Template Engine ─────────────────────────────────── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-thymeleaf</artifactId>
+        </dependency>
+
+        <!-- ── Spring Boot Security & Thymeleaf Security Dialect ────────── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.thymeleaf.extras</groupId>
+            <artifactId>thymeleaf-extras-springsecurity6</artifactId>
+        </dependency>
+
+        <!-- ── Spring Data JPA + Hibernate (ORM for H2) ─────────────────── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- ── H2 Embedded Database (file-based persistence) ────────────── -->
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <!-- runtime scope: only needed when the app is running, not compile-time -->
+            <scope>runtime</scope>
+        </dependency>
+
+        <!-- ── Jackson JSON (core + Java-8 date/time types) ─────────────── -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
+        <!-- ── Apache PDFBox (syllabus PDF text extraction) ─────────────── -->
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
+        </dependency>
+
+        <!-- ── Apache POI OOXML (Excel .xlsx export) ────────────────────── -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>${poi.version}</version>
+        </dependency>
+
+        <!-- ── JavaFX Controls (pure-Java UI – Phases 4+) ───────────────── -->
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <!-- ── Spring Boot Test (unit / integration tests) ──────────────── -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+    </dependencies>
+
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <!--  Build Plugins                                                       -->
+    <!-- ─────────────────────────────────────────────────────────────────── -->
+    <build>
+        <finalName>timetable</finalName>
+        <plugins>
+
+            <!-- Spring Boot Maven Plugin: creates a fat/uber-jar -->
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.tejesh.timetable.TimetableApplication</mainClass>
+                </configuration>
+            </plugin>
+
+            <!-- Maven Compiler Plugin: enforce Java 17 bytecode target.
+                 Version 3.13.0+ handles JDK 23/24/25/26 internal APIs correctly.
+                 Lombok annotation processor REMOVED – it uses com.sun.tools.javac
+                 TypeTag internals that do not exist in Java 26, causing a fatal
+                 ExceptionInInitializerError. All models use hand-written accessors. -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.13.0</version>
+                <configuration>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
+                    <!-- No annotationProcessorPaths: nothing triggers javac internals -->
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

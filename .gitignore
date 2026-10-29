@@ -1,0 +1,33 @@
+# Compiled Java class files
+*.class
+
+# Maven build artifacts
+target/
+*.jar
+*.war
+*.ear
+
+# Embedded H2 Database files
+data/
+*.mv.db
+*.trace.db
+
+# Logs and temporary files
+*.log
+user_voice_input.wav
+uploaded_*
+test_sample.wav
+cookies.txt
+
+# IDE & Editor settings
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+
+# OS generated files
+Thumbs.db
+Desktop.ini
+.DS_Store
