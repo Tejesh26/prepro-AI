@@ -89,7 +89,7 @@ public class TimetableSlot {
      * Stored as a VARCHAR string in H2 for human-readability.
      */
     @Enumerated(EnumType.STRING)
-    @Column(name = "slot_type", nullable = false, length = 20)
+    @Column(name = "slot_type", nullable = false, length = 50, columnDefinition = "varchar(50)")
     private SlotType slotType;
 
     /**
