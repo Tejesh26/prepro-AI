@@ -64,6 +64,7 @@ public class TimetableManagerService {
     // ──────────────────────────────────────────────────────────────────────────
 
     private final AIBrainService           aiBrainService;
+    private final MealBreakService         mealBreakService;
     private final PdfExtractorService      pdfExtractorService;
     private final VoiceInputService        voiceInputService;
     private final ExportService            exportService;
@@ -73,6 +74,7 @@ public class TimetableManagerService {
     private final PasswordEncoder          passwordEncoder;
 
     public TimetableManagerService(AIBrainService aiBrainService,
+                                   MealBreakService mealBreakService,
                                    PdfExtractorService pdfExtractorService,
                                    VoiceInputService voiceInputService,
                                    ExportService exportService,
@@ -81,6 +83,7 @@ public class TimetableManagerService {
                                    ZoomMeetingRepository zoomMeetingRepository,
                                    PasswordEncoder passwordEncoder) {
         this.aiBrainService        = aiBrainService;
+        this.mealBreakService      = mealBreakService;
         this.pdfExtractorService   = pdfExtractorService;
         this.voiceInputService     = voiceInputService;
         this.exportService         = exportService;
@@ -160,10 +163,35 @@ public class TimetableManagerService {
      */
     @Transactional
     public List<TimetableSlot> processInputsAndSaveTimetable(User user,
-                                                              List<SubjectInput> subjects,
-                                                              File optionalPdfFile,
-                                                              File optionalVoiceFile,
-                                                              String textInstructions) {
+                                                            List<SubjectInput> subjects,
+                                                            File optionalPdfFile,
+                                                            File optionalVoiceFile,
+                                                            String textInstructions) {
+        return processInputsAndSaveTimetable(user, subjects, optionalPdfFile, optionalVoiceFile,
+                textInstructions, true, LocalTime.of(13, 0), 45);
+    }
+
+    /**
+     * Executes the complete end-to-end timetable generation pipeline:
+     * <ol>
+     *   <li>Extracts text from uploaded PDF syllabus (if provided).</li>
+     *   <li>Transcribes voice note to text with Gemini (if provided).</li>
+     *   <li>Calls {@link AIBrainService} to generate the initial study/break schedule.</li>
+     *   <li>Inserts automatic meal breaks (Lunch, Snacks, Dinner) via {@link MealBreakService}.</li>
+     *   <li>Deletes previous slots and Zoom meetings from H2.</li>
+     *   <li>Persists the new {@link TimetableSlot} entities linked to {@code user}.</li>
+     *   <li>Extracts and saves Zoom meetings for automated launching.</li>
+     * </ol>
+     */
+    @Transactional
+    public List<TimetableSlot> processInputsAndSaveTimetable(User user,
+                                                            List<SubjectInput> subjects,
+                                                            File optionalPdfFile,
+                                                            File optionalVoiceFile,
+                                                            String textInstructions,
+                                                            boolean includeMealBreaks,
+                                                            LocalTime customLunchTime,
+                                                            Integer customLunchDuration) {
 
         log.info("=== TimetableManagerService: Starting full pipeline for user '{}' ===",
                 user.getUsername());
@@ -204,6 +232,20 @@ public class TimetableManagerService {
                 syllabusText
         );
         log.info("Pipeline Step 3: AI Brain returned {} slot(s).", generatedSlots.size());
+
+        // ── Step 3B: Meal Break Insertion (Automatic Lunch, Snacks, Dinner) ──
+        if (includeMealBreaks) {
+            log.info("Pipeline Step 3B: Inserting automatic meal breaks into generated schedule...");
+            generatedSlots = mealBreakService.processWeeklySchedule(
+                    generatedSlots,
+                    includeMealBreaks,
+                    customLunchTime,
+                    customLunchDuration,
+                    combinedInstructions
+            );
+            log.info("Pipeline Step 3B: Timetable after meal break insertion contains {} slot(s).",
+                    generatedSlots.size());
+        }
 
         // ── Step 4: Clear Old Schedule ────────────────────────────────────────
         log.info("Pipeline Step 4: Clearing previous timetable and Zoom meetings for user '{}'...",
@@ -474,12 +516,18 @@ public class TimetableManagerService {
                     ? upcomingSlot.getSubject()
                     : upcomingSlot.getSlotType().name();
 
-            dto.setSmartPrompt(String.format("⏰ Heads up %s! Your next session [%s] starts in %d minutes (%s - %s). Are you ready to dive into %s, or do you want to switch or adjust?",
-                    username, sub, closestStartsIn, upcomingSlot.getStartTime(), upcomingSlot.getEndTime(),
-                    (upcomingSlot.getTopic() != null ? upcomingSlot.getTopic() : "study topic")));
+            if (upcomingSlot.getSlotType() != null && upcomingSlot.getSlotType().isMeal()) {
+                dto.setSmartPrompt(String.format("🍽️ Nourishment Alert: %s in %d minute%s (%s - %s)! Time to wrap up and enjoy your food.",
+                        sub, closestStartsIn, (closestStartsIn == 1 ? "" : "s"), upcomingSlot.getStartTime(), upcomingSlot.getEndTime()));
+                dto.setSpeechText(String.format("Heads up %s, %s in %d minutes.", username, sub, closestStartsIn));
+            } else {
+                dto.setSmartPrompt(String.format("⏰ Heads up %s! Your next session [%s] starts in %d minutes (%s - %s). Are you ready to dive into %s, or do you want to switch or adjust?",
+                        username, sub, closestStartsIn, upcomingSlot.getStartTime(), upcomingSlot.getEndTime(),
+                        (upcomingSlot.getTopic() != null ? upcomingSlot.getTopic() : "study topic")));
 
-            dto.setSpeechText(String.format("Hey %s! Your %s session starts in %d minutes. Are you ready to continue, switch subjects, or take a break?",
-                    username, sub, closestStartsIn));
+                dto.setSpeechText(String.format("Hey %s! Your %s session starts in %d minutes. Are you ready to continue, switch subjects, or take a break?",
+                        username, sub, closestStartsIn));
+            }
 
         // 2. Ending Soon Alert: Active slot has 1 to 10 minutes remaining
         } else if (activeSlot != null) {
@@ -499,11 +547,21 @@ public class TimetableManagerService {
 
                     dto.setSpeechText(String.format("Hey %s, you have %d minutes left in %s. Do you want to continue this subject, switch subjects, or take a break?",
                             username, remaining, sub));
+                } else if (activeSlot.getSlotType() != null && activeSlot.getSlotType().isMeal()) {
+                    dto.setSmartPrompt(String.format("🍽️ %s ending in %d minute%s! Finish up, hydrate, and prepare for your upcoming study session.",
+                            sub, remaining, (remaining == 1 ? "" : "s")));
+                    dto.setSpeechText(String.format("Hey %s, %d minutes left in your meal break.", username, remaining));
                 } else {
                     dto.setSmartPrompt(String.format("☕ Break time ending in %d minute%s! Drink water and get ready for your next study block.",
                             remaining, (remaining == 1 ? "" : "s")));
                     dto.setSpeechText(String.format("Hey %s, %d minutes left in your break.", username, remaining));
                 }
+            } else if (activeSlot.getSlotType() != null && activeSlot.getSlotType().isMeal()) {
+                dto.setWarningActive(false);
+                dto.setAlertType("ACTIVE_MEAL");
+                dto.setSmartPrompt(String.format("🍽️ Enjoying %s (%s). %d minutes remaining until %s.",
+                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, activeSlot.getEndTime()));
+                dto.setSpeechText("");
             } else {
                 dto.setWarningActive(false);
                 dto.setAlertType("ACTIVE_STUDY");

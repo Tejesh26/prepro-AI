@@ -33,6 +33,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.io.File;
 import java.io.IOException;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -180,6 +181,9 @@ public class WebController {
                                  @RequestParam(value = "pdfFile", required = false) MultipartFile pdfFile,
                                  @RequestParam(value = "voiceFile", required = false) MultipartFile voiceFile,
                                  @RequestParam(value = "extraInstructions", required = false) String extraInstructions,
+                                 @RequestParam(value = "includeMealBreaks", defaultValue = "true") boolean includeMealBreaks,
+                                 @RequestParam(value = "lunchTime", required = false, defaultValue = "13:00") String lunchTime,
+                                 @RequestParam(value = "lunchDuration", required = false, defaultValue = "45") Integer lunchDuration,
                                  Authentication authentication,
                                  HttpSession session,
                                  RedirectAttributes redirectAttributes) {
@@ -229,15 +233,26 @@ public class WebController {
                         tempVoice.getAbsolutePath(), tempVoice.length());
             }
 
-            log.info("WebController: Triggering AI timetable generation for user '{}' with {} subjects...",
-                    user.getUsername(), subjects.size());
+            log.info("WebController: Triggering AI timetable generation for user '{}' with {} subjects (Meal breaks: {})...",
+                    user.getUsername(), subjects.size(), includeMealBreaks);
+
+            LocalTime parsedLunchTime = null;
+            if (lunchTime != null && !lunchTime.isBlank()) {
+                try {
+                    parsedLunchTime = LocalTime.parse(lunchTime.trim());
+                } catch (Exception ignored) {}
+            }
+            if (parsedLunchTime == null) parsedLunchTime = LocalTime.of(13, 0);
 
             timetableManagerService.processInputsAndSaveTimetable(
                     user,
                     subjects,
                     tempPdf,
                     tempVoice,
-                    extraInstructions
+                    extraInstructions,
+                    includeMealBreaks,
+                    parsedLunchTime,
+                    lunchDuration != null ? lunchDuration : 45
             );
 
             log.info("WebController: AI generation completed successfully.");
@@ -305,6 +320,9 @@ public class WebController {
                 subjectRows.add(s.getSubject());
             }
         }
+        if (daySlots.stream().anyMatch(s -> s.getSlotType() != null && s.getSlotType().isMeal())) {
+            subjectRows.add("🍽️ Nourishment & Meal Breaks");
+        }
         if (daySlots.stream().anyMatch(s -> s.getSlotType() == SlotType.ZOOM_MEETING)) {
             subjectRows.add("🎥 Online Meetings (Zoom)");
         }
@@ -327,6 +345,7 @@ public class WebController {
         long studyCount = allSlots.stream().filter(s -> s.getSlotType() == SlotType.STUDY).count();
         long breakCount = allSlots.stream().filter(s -> s.getSlotType() == SlotType.BREAK).count();
         long zoomCount  = allSlots.stream().filter(s -> s.getSlotType() == SlotType.ZOOM_MEETING).count();
+        long mealCount  = allSlots.stream().filter(s -> s.getSlotType() != null && s.getSlotType().isMeal()).count();
 
         model.addAttribute("user", user);
         model.addAttribute("allSlots", allSlots);
@@ -338,6 +357,7 @@ public class WebController {
         model.addAttribute("studyCount", studyCount);
         model.addAttribute("breakCount", breakCount);
         model.addAttribute("zoomCount", zoomCount);
+        model.addAttribute("mealCount", mealCount);
 
         return "timetable";
     }
@@ -347,6 +367,9 @@ public class WebController {
             String slotTime = slot.getStartTime() + " - " + slot.getEndTime();
             if (!slotTime.equals(timeSlot)) continue;
 
+            if (rowCategory.equals("🍽️ Nourishment & Meal Breaks") && slot.getSlotType() != null && slot.getSlotType().isMeal()) {
+                return slot;
+            }
             if (rowCategory.equals("☕ Cognitive Breaks (5-10m)") && slot.getSlotType() == SlotType.BREAK) {
                 return slot;
             }

@@ -45,9 +45,9 @@
         </div>
     </div>
 
-    <!-- 4 Summary Stats Cards -->
+    <!-- 5 Summary Stats Cards -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-primary-subtle text-primary">
                     <i class="bi bi-calendar2-week-fill"></i>
@@ -58,7 +58,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-success-subtle text-success">
                     <i class="bi bi-book-half"></i>
@@ -69,7 +69,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-warning-subtle text-warning">
                     <i class="bi bi-cup-hot-fill"></i>
@@ -80,7 +80,18 @@
                 </div>
             </div>
         </div>
-        <div class="col-6 col-lg-3">
+        <div class="col-6 col-md-4 col-xl">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning-subtle text-warning">
+                    <i class="bi bi-egg-fried"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Meal Breaks</div>
+                    <div class="fs-4 fw-bold text-heading" th:text="${mealCount}">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-purple-subtle text-purple">
                     <i class="bi bi-camera-video-fill"></i>
@@ -190,6 +201,7 @@
             <div class="d-flex align-items-center gap-3 small text-muted">
                 <span><span class="badge-soft badge-soft-success me-1">&bull;</span> Study (30m)</span>
                 <span><span class="badge-soft badge-soft-warning me-1">&bull;</span> Break (10m)</span>
+                <span><span class="badge-soft badge-soft-orange me-1">&bull;</span> Meal Break</span>
                 <span><span class="badge-soft badge-soft-purple me-1">&bull;</span> Zoom Class</span>
             </div>
         </div>
@@ -218,6 +230,10 @@
                     <tr th:each="entry : ${matrix.entrySet()}">
                         <!-- Y-Axis Subject Header -->
                         <th scope="row">
+                            <span th:if="${entry.key.contains('🍽️')}">
+                                <i class="bi bi-egg-fried text-warning me-1"></i>
+                                <span th:text="${entry.key}"></span>
+                            </span>
                             <span th:if="${entry.key.contains('☕')}">
                                 <i class="bi bi-cup-hot-fill text-warning me-1"></i>
                                 <span th:text="${entry.key}"></span>
@@ -226,7 +242,7 @@
                                 <i class="bi bi-camera-video-fill text-purple me-1"></i>
                                 <span th:text="${entry.key}"></span>
                             </span>
-                            <span th:if="${!entry.key.contains('☕') and !entry.key.contains('🎥')}">
+                            <span th:if="${!entry.key.contains('☕') and !entry.key.contains('🎥') and !entry.key.contains('🍽️')}">
                                 <i class="bi bi-journal-bookmark-fill text-primary me-1"></i>
                                 <span th:text="${entry.key}"></span>
                             </span>
@@ -296,6 +312,26 @@
                                             <span th:if="${slot.meetingLink == null or slot.meetingLink.isBlank()}" class="badge-soft badge-soft-purple" style="font-size: 0.7rem;">
                                                 No Link
                                             </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- 1D: MEAL Break Slot (Lunch, Snack, Dinner) -->
+                                    <div th:if="${slot.slotType != null and slot.slotType.isMeal()}" class="slot-card slot-meal"
+                                         th:title="'Nourishment & Meal Break: ' + ${slot.subject}">
+                                        <div>
+                                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                                <span class="badge-soft badge-soft-orange py-0 px-1_5" style="font-size: 0.68rem;" th:text="${slot.slotType.name()}">MEAL</span>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                            </div>
+                                            <div class="small fw-bold text-truncate text-heading">
+                                                <i class="bi bi-egg-fried text-warning me-1"></i>
+                                                <span th:text="${slot.subject != null and !slot.subject.isBlank() ? slot.subject : 'Meal Break'}">Lunch Break</span>
+                                            </div>
+                                            <div class="small text-muted text-truncate" style="font-size: 0.72rem;" th:text="${slot.topic != null and !slot.topic.isBlank() ? slot.topic : 'Nourishment & Mind Refresh'}">Nourishment</div>
+                                        </div>
+                                        <div class="mt-2 d-flex align-items-center justify-content-between">
+                                            <span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-bell-fill text-warning me-1"></i>5m Alert</span>
+                                            <small class="text-warning fw-bold" style="font-size: 0.72rem;" th:text="${slot.slotType == T(com.tejesh.timetable.model.SlotType).LUNCH ? '45 Min' : 'Snack'}">Meal</small>
                                         </div>
                                     </div>
 

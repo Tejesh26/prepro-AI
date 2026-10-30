@@ -70,17 +70,40 @@ public class AutomationSchedulerService {
         LocalTime now = LocalTime.now();
         String currentTimeStr = now.format(TIME_FORMATTER);
         String tenMinutesLaterStr = now.plusMinutes(10).format(TIME_FORMATTER);
+        String fiveMinutesLaterStr = now.plusMinutes(5).format(TIME_FORMATTER);
 
-        log.info("AutomationSchedulerService: [Active Monitor] Checking schedule for {} (Now: {}, 10-min target: {})",
-                currentDayOfWeek, currentTimeStr, tenMinutesLaterStr);
+        log.info("AutomationSchedulerService: [Active Monitor] Checking schedule for {} (Now: {}, 10-min target: {}, 5-min target: {})",
+                currentDayOfWeek, currentTimeStr, tenMinutesLaterStr, fiveMinutesLaterStr);
 
         checkTenMinuteWarnings(currentDayOfWeek, today, tenMinutesLaterStr);
+        checkFiveMinuteWarnings(currentDayOfWeek, today, fiveMinutesLaterStr);
         checkExactTimeActions(currentDayOfWeek, today, currentTimeStr);
     }
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 1. Pre-Event (10 Minutes Before) Checks
+    // 1. Pre-Event (10 Minutes & 5 Minutes Before) Checks
     // ──────────────────────────────────────────────────────────────────────────
+
+    private void checkFiveMinuteWarnings(String dayOfWeek, LocalDate today, String targetStartTime) {
+        // Remind the user 5 minutes before each meal break ("Lunch time in 5 minutes")
+        List<TimetableSlot> upcomingSlots = slotRepository.findByDayOfWeekIgnoreCaseAndStartTime(dayOfWeek, targetStartTime);
+        for (TimetableSlot slot : upcomingSlots) {
+            String alertKey = "slot_" + slot.getId() + "_" + today + "_5MIN_WARN";
+            if (processedAlerts.contains(alertKey)) continue;
+
+            if (slot.getSlotType() != null && slot.getSlotType().isMeal()) {
+                String mealTitle = (slot.getSubject() != null && !slot.getSubject().isBlank())
+                        ? slot.getSubject() : "Meal Break";
+
+                String reminderText = (slot.getSlotType() == SlotType.LUNCH)
+                        ? "Lunch time in 5 minutes! Time to step away, eat, and recharge."
+                        : mealTitle + " in 5 minutes! Step away and enjoy your nourishment.";
+
+                notificationService.sendDesktopAlert("🍽️ " + mealTitle, reminderText);
+                processedAlerts.add(alertKey);
+            }
+        }
+    }
 
     private void checkTenMinuteWarnings(String dayOfWeek, LocalDate today, String targetStartTime) {
         // 1. Check Timetable Slots starting in 10 minutes
@@ -151,6 +174,14 @@ public class AutomationSchedulerService {
                 notificationService.sendDesktopAlert(
                         "☕ Brain Break Time!",
                         "Brain Break! Step away for 5 to 10 minutes to recharge."
+                );
+                processedAlerts.add(alertKey);
+            } else if (slot.getSlotType() != null && slot.getSlotType().isMeal()) {
+                String mealTitle = (slot.getSubject() != null && !slot.getSubject().isBlank())
+                        ? slot.getSubject() : "Meal Break";
+                notificationService.sendDesktopAlert(
+                        "🍽️ " + mealTitle + " Started!",
+                        "Time for " + mealTitle + "! Enjoy your food and recharge."
                 );
                 processedAlerts.add(alertKey);
             } else if (slot.getSlotType() == SlotType.ZOOM_MEETING) {

@@ -277,6 +277,43 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
                     </div>
                 </div>
 
+                <!-- Meal & Nutrition Breaks Controls -->
+                <div class="app-card p-3 bg-surface-secondary border mb-3">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                        <div class="form-check form-switch mb-0">
+                            <input class="form-check-input" type="checkbox" role="switch" id="includeMealBreaks" name="includeMealBreaks" value="true" checked onchange="toggleMealSettings(this.checked)">
+                            <label class="form-check-label fw-bold text-heading" for="includeMealBreaks">
+                                <i class="bi bi-egg-fried text-warning me-1"></i> Include Automatic Meal Breaks (Lunch, Snacks &amp; Dinner)
+                            </label>
+                        </div>
+                        <span class="badge-soft badge-soft-warning">Smart Nutrition Pacing</span>
+                    </div>
+                    <p class="text-muted small mb-3">
+                        Automatically inserts lunch (45m near 13:00), morning &amp; evening snacks (15m), and dinner based on your study window duration.
+                    </p>
+
+                    <!-- Editable Lunch Settings -->
+                    <div id="mealSettingsPanel" class="row g-3 align-items-center">
+                        <div class="col-sm-6">
+                            <label for="lunchTime" class="form-label small fw-semibold">Target Lunch Start Time</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-clock"></i></span>
+                                <input type="time" id="lunchTime" name="lunchTime" class="form-control" value="13:00">
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Default 13:00 (covers 12:00–14:30 lunch window).</small>
+                        </div>
+                        <div class="col-sm-6">
+                            <label for="lunchDuration" class="form-label small fw-semibold">Lunch Duration (Minutes)</label>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text"><i class="bi bi-hourglass-split"></i></span>
+                                <input type="number" id="lunchDuration" name="lunchDuration" class="form-control" value="45" min="15" max="90" step="5">
+                                <span class="input-group-text">mins</span>
+                            </div>
+                            <small class="text-muted" style="font-size: 0.72rem;">Recommended 45m healthy digestion break.</small>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Primary Action Button -->
                 <div class="text-center pt-3 border-top" style="border-color: var(--border-color) !important;">
                     <button type="submit" class="btn btn-primary py-3 px-5 fs-6 shadow-sm">
@@ -338,6 +375,13 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
             btn.closest('.subject-row').remove();
         } else {
             showToast('At least one subject is required.', 'warning');
+        }
+    }
+
+    function toggleMealSettings(checked) {
+        const panel = document.getElementById('mealSettingsPanel');
+        if (panel) {
+            panel.style.display = checked ? 'flex' : 'none';
         }
     }
 

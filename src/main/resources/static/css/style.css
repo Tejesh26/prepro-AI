@@ -424,6 +424,13 @@ a:hover {
 .badge-soft-warning { background: var(--warning-subtle); color: var(--warning-text); }
 .badge-soft-danger  { background: var(--danger-subtle);  color: var(--danger-text);  }
 .badge-soft-purple  { background: var(--purple-subtle);  color: var(--purple-text);  }
+.badge-soft-orange  { background: #ffedd5; color: #c2410c; }
+
+[data-theme="dark"] .badge-soft-orange,
+[data-bs-theme="dark"] .badge-soft-orange {
+    background: rgba(249, 115, 22, 0.2);
+    color: #fdba74;
+}
 
 .pulse-dot {
     width: 8px;
@@ -643,6 +650,19 @@ a:hover {
     background-color: var(--purple-subtle);
     border-color: var(--purple-border);
     color: var(--purple-text);
+}
+
+.slot-meal {
+    background-color: #fff7ed;
+    border-color: #fed7aa;
+    color: #9a3412;
+}
+
+[data-theme="dark"] .slot-meal,
+[data-bs-theme="dark"] .slot-meal {
+    background-color: rgba(249, 115, 22, 0.12);
+    border-color: rgba(249, 115, 22, 0.35);
+    color: #fed7aa;
 }
 
 .slot-empty {

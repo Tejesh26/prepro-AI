@@ -174,6 +174,16 @@ public class ExportService {
             zoomStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
             applyBorders(zoomStyle);
 
+            // 6. Meal Style (Warm Amber / Orange)
+            CellStyle mealStyle = workbook.createCellStyle();
+            Font mealFont = workbook.createFont();
+            mealFont.setBold(true);
+            mealFont.setColor(IndexedColors.BROWN.getIndex());
+            mealStyle.setFont(mealFont);
+            mealStyle.setFillForegroundColor(IndexedColors.LEMON_CHIFFON.getIndex());
+            mealStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
+            applyBorders(mealStyle);
+
             // ── Draw Title Row ────────────────────────────────────────────────
             Row titleRow = sheet.createRow(0);
             Cell titleCell = titleRow.createCell(0);
@@ -202,6 +212,7 @@ public class ExportService {
                     case STUDY -> studyStyle;
                     case BREAK -> breakStyle;
                     case ZOOM_MEETING -> zoomStyle;
+                    case MEAL, LUNCH, SNACK, DINNER -> mealStyle;
                 };
 
                 createStyledCell(row, 0, nvl(slot.getDayOfWeek(), ""), rowStyle);
@@ -449,6 +460,7 @@ public class ExportService {
             case STUDY -> alternate ? new Color(236, 253, 243) : new Color(242, 254, 247); // Subtle Green
             case BREAK -> new Color(241, 245, 249); // Subtle Slate Gray
             case ZOOM_MEETING -> new Color(254, 243, 235); // Subtle Warm Peach
+            case MEAL, LUNCH, SNACK, DINNER -> new Color(255, 247, 237); // Warm Light Amber/Orange
         };
     }
 
