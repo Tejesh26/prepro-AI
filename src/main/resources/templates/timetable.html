@@ -238,10 +238,14 @@
                                 <div th:if="${slot != null}" class="h-100">
 
                                     <!-- 1A: STUDY Slot -->
-                                    <div th:if="${slot.slotType.name() == 'STUDY'}" class="slot-card slot-study"
-                                         th:onclick="'activateSlotAlarm(' + ${slot.id} + ', \'' + ${#strings.escapeJavaScript(slot.subject)} + '\', \'' + ${#strings.escapeJavaScript(slot.topic)} + '\', \'' + ${slot.startTime} + '\', \'' + ${slot.endTime} + '\')'"
+                                    <div th:if="${slot.slotType.name() == 'STUDY'}" class="slot-card slot-study study-slot-action"
+                                         th:data-slot-id="${slot.id}"
+                                         th:data-slot-subject="${slot.subject ?: 'Study Session'}"
+                                         th:data-slot-topic="${slot.topic ?: ''}"
+                                         th:data-slot-start="${slot.startTime}"
+                                         th:data-slot-end="${slot.endTime}"
                                          style="cursor: pointer;"
-                                         th:title="'Click to focus Companion & trigger 10-Min Smart Alarm for ' + ${slot.subject}">
+                                         th:title="'Click to focus Companion & trigger 10-Min Smart Alarm for ' + ${slot.subject ?: 'Session'}">
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span class="badge-soft badge-soft-success py-0 px-1_5" style="font-size: 0.68rem;" th:text="${slot.subject}">STUDY</span>
@@ -676,6 +680,19 @@
 
     fetchCompanionStatus();
     setInterval(fetchCompanionStatus, 8000);
+
+    // Delegated click handler for study slot alarm cards
+    document.addEventListener('click', function (e) {
+        const slotEl = e.target.closest('.study-slot-action');
+        if (slotEl) {
+            const id = slotEl.getAttribute('data-slot-id');
+            const subject = slotEl.getAttribute('data-slot-subject') || 'Study Session';
+            const topic = slotEl.getAttribute('data-slot-topic') || '';
+            const start = slotEl.getAttribute('data-slot-start') || '';
+            const end = slotEl.getAttribute('data-slot-end') || '';
+            activateSlotAlarm(id, subject, topic, start, end);
+        }
+    });
 </script>
 
 </body>

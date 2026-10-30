@@ -472,7 +472,10 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
     }
 
     // 5. Form Submit Hook for AI Animated Loading Screen
-    document.getElementById('timetableForm').addEventListener('submit', function () {
+    document.getElementById('timetableForm').addEventListener('submit', function (e) {
+        if (this.checkValidity && !this.checkValidity()) {
+            return;
+        }
         if (isDictating && speechRecognizer) speechRecognizer.stop();
         if (window.showAILoading) {
             window.showAILoading([

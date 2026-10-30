@@ -16,13 +16,17 @@
     // 1. Theme Management (Early execution to avoid Flash of Unstyled Content)
     // ──────────────────────────────────────────────────────────────────────────
     const THEME_STORAGE_KEY = 'prepro_theme';
+    const THEME_MANUAL_KEY = 'prepro_theme_manual';
 
     function getPreferredTheme() {
+        // Only use dark mode if the user explicitly clicked the theme toggle switch.
+        // Otherwise default to the clean, bright, high-contrast light theme.
+        const isManual = localStorage.getItem(THEME_MANUAL_KEY) === 'true';
         const storedTheme = localStorage.getItem(THEME_STORAGE_KEY);
-        if (storedTheme) {
-            return storedTheme;
+        if (isManual && storedTheme === 'dark') {
+            return 'dark';
         }
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        return 'light';
     }
 
     function applyTheme(theme) {
@@ -54,6 +58,7 @@
     window.toggleTheme = function () {
         const current = document.documentElement.getAttribute('data-theme') || 'light';
         const next = current === 'dark' ? 'light' : 'dark';
+        localStorage.setItem(THEME_MANUAL_KEY, 'true');
         applyTheme(next);
     };
 
@@ -133,6 +138,7 @@
     // 3. AI Generation Loading State Simulation
     // ──────────────────────────────────────────────────────────────────────────
     let loadingInterval = null;
+    let loadingSafetyTimer = null;
 
     window.showAILoading = function (customSteps) {
         const overlay = document.getElementById('aiLoadingOverlay');
@@ -155,9 +161,13 @@
         if (textEl) textEl.innerText = steps[0];
         if (barEl) barEl.style.width = '15%';
 
-        overlay.classList.add('active');
+        overlay.style.display = 'flex';
+        requestAnimationFrame(() => {
+            overlay.classList.add('active');
+        });
 
         if (loadingInterval) clearInterval(loadingInterval);
+        if (loadingSafetyTimer) clearTimeout(loadingSafetyTimer);
 
         loadingInterval = setInterval(() => {
             stepIndex++;
@@ -174,13 +184,28 @@
                     barEl.style.width = percent + '%';
                 }
             }
-        }, 3200);
+        }, 2800);
+
+        // Safety timeout (45s): automatically dismiss overlay if server takes too long
+        loadingSafetyTimer = setTimeout(() => {
+            window.hideAILoading();
+        }, 45000);
     };
 
     window.hideAILoading = function () {
         const overlay = document.getElementById('aiLoadingOverlay');
-        if (overlay) overlay.classList.remove('active');
-        if (loadingInterval) clearInterval(loadingInterval);
+        if (overlay) {
+            overlay.classList.remove('active');
+            overlay.style.display = 'none';
+        }
+        if (loadingInterval) {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+        }
+        if (loadingSafetyTimer) {
+            clearTimeout(loadingSafetyTimer);
+            loadingSafetyTimer = null;
+        }
     };
 
     // ──────────────────────────────────────────────────────────────────────────
@@ -232,10 +257,22 @@
     };
 
     // ──────────────────────────────────────────────────────────────────────────
-    // 5. Document Ready Event Bindings
+    // 5. Document Ready & Navigation Lifecycle Event Bindings
     // ──────────────────────────────────────────────────────────────────────────
+    // Dismiss loading overlay immediately whenever any page is shown (normal nav, redirect, or bfcache restore)
+    window.addEventListener('pageshow', function () {
+        if (typeof window.hideAILoading === 'function') {
+            window.hideAILoading();
+        }
+    });
+
     document.addEventListener('DOMContentLoaded', function () {
-        // Apply theme icon state
+        // Ensure any stuck overlay is cleared
+        if (typeof window.hideAILoading === 'function') {
+            window.hideAILoading();
+        }
+
+        // Apply preferred theme state
         applyTheme(getPreferredTheme());
 
         // Auto-convert flash messages into modern toasts if present
