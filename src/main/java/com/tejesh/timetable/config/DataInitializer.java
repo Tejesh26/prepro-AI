@@ -70,24 +70,29 @@ public class DataInitializer implements CommandLineRunner {
     private void migrateSlotTypeColumn() {
         try {
             // Drop any legacy check constraints on slot_type (e.g. ('BREAK','STUDY','ZOOM_MEETING'))
-            List<String> checkConstraints = jdbcTemplate.queryForList(
-                    "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.CONSTRAINTS WHERE TABLE_NAME = 'TIMETABLE_SLOTS' AND CONSTRAINT_TYPE = 'CHECK'",
-                    String.class
-            );
-            for (String constraintName : checkConstraints) {
-                try {
-                    jdbcTemplate.execute("ALTER TABLE timetable_slots DROP CONSTRAINT " + constraintName);
-                    log.info("DataInitializer: Dropped legacy check constraint '{}' from timetable_slots.", constraintName);
-                } catch (Exception dropEx) {
-                    log.debug("DataInitializer: Skipping constraint drop: {}", dropEx.getMessage());
+            // In H2 2.x, constraints are queried from INFORMATION_SCHEMA.TABLE_CONSTRAINTS
+            try {
+                List<String> checkConstraints = jdbcTemplate.queryForList(
+                        "SELECT CONSTRAINT_NAME FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NAME = 'TIMETABLE_SLOTS' AND CONSTRAINT_TYPE = 'CHECK'",
+                        String.class
+                );
+                for (String constraintName : checkConstraints) {
+                    try {
+                        jdbcTemplate.execute("ALTER TABLE timetable_slots DROP CONSTRAINT " + constraintName);
+                        log.info("DataInitializer: Dropped legacy check constraint '{}' from timetable_slots.", constraintName);
+                    } catch (Exception dropEx) {
+                        log.debug("DataInitializer: Skipping constraint drop: {}", dropEx.getMessage());
+                    }
                 }
+            } catch (Exception checkEx) {
+                log.debug("DataInitializer: Could not query check constraints (may not exist): {}", checkEx.getMessage());
             }
 
             // Alter column to VARCHAR(50) to allow all current and future slot types
             jdbcTemplate.execute("ALTER TABLE timetable_slots ALTER COLUMN slot_type VARCHAR(50)");
             log.info("DataInitializer: ✅ timetable_slots.slot_type verified as VARCHAR(50).");
         } catch (Exception e) {
-            log.debug("DataInitializer: slot_type migration note: {}", e.getMessage());
+            log.info("DataInitializer: slot_type migration note: {}", e.getMessage());
         }
     }
 }
