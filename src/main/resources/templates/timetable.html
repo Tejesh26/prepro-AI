@@ -1,528 +1,210 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="~{fragments/layout :: header('Master Timetable - PrePRO AI')}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Timetable Grid - PREPRO AI</title>
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-blue: #2563eb;
-            --primary-dark: #1d4ed8;
-            --bg-page: #f8fafc;
-            --card-border: #e2e8f0;
-        }
-
-        body {
-            background-color: var(--bg-page);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #0f172a;
-            min-height: 100vh;
-        }
-
-        .navbar-custom {
-            background-color: #ffffff;
-            border-bottom: 1px solid var(--card-border);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
-
-        .card-custom {
-            background-color: #ffffff;
-            border: 1px solid var(--card-border);
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-            margin-bottom: 24px;
-        }
-
-        .stat-card {
-            background: #ffffff;
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            padding: 16px 20px;
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
-        }
-
-        .stat-icon {
-            width: 46px;
-            height: 46px;
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.35rem;
-        }
-
-        /* Fixed Master Grid Styles */
-        .table-grid-wrapper {
-            overflow-x: auto;
-            position: relative;
-            border: 1px solid var(--card-border);
-            border-radius: 10px;
-            background: #ffffff;
-        }
-
-        .timetable-table {
-            border-collapse: separate;
-            border-spacing: 0;
-            width: 100%;
-            margin-bottom: 0;
-        }
-
-        .timetable-table thead th {
-            background-color: #f1f5f9;
-            color: #334155;
-            font-size: 0.8rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            padding: 14px 16px;
-            border-bottom: 2px solid #cbd5e1;
-            border-right: 1px solid #e2e8f0;
-            white-space: nowrap;
-            text-align: center;
-        }
-
-        /* Sticky Left Column for Subject/Category */
-        .timetable-table thead th:first-child,
-        .timetable-table tbody th:first-child,
-        .timetable-table tbody td:first-child {
-            position: sticky;
-            left: 0;
-            z-index: 2;
-            background-color: #f8fafc;
-            border-right: 2px solid #cbd5e1;
-            text-align: left;
-            min-width: 190px;
-            max-width: 230px;
-            font-weight: 600;
-            box-shadow: 2px 0 5px rgba(0,0,0,0.04);
-        }
-
-        .timetable-table tbody th:first-child {
-            color: #1e293b;
-            padding: 14px 16px;
-            vertical-align: middle;
-        }
-
-        .timetable-table thead th:first-child {
-            z-index: 3;
-            background-color: #e2e8f0;
-        }
-
-        .timetable-table td {
-            padding: 10px;
-            border-bottom: 1px solid #f1f5f9;
-            border-right: 1px solid #f1f5f9;
-            vertical-align: middle;
-            min-width: 210px;
-            max-width: 260px;
-            height: 96px;
-            font-size: 0.85rem;
-        }
-
-        /* Slot Card Cell Styles */
-        .slot-card {
-            border-radius: 8px;
-            padding: 10px 12px;
-            height: 100%;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
-        }
-
-        .slot-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
-
-        /* Study Cell */
-        .slot-study {
-            background-color: #f0fdf4;
-            border: 1px solid #bbf7d0;
-            color: #166534;
-        }
-
-        .slot-study .slot-badge {
-            background-color: #dcfce7;
-            color: #15803d;
-            font-weight: 700;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* Break Cell */
-        .slot-break {
-            background-color: #fffbeb;
-            border: 1px solid #fde68a;
-            color: #92400e;
-        }
-
-        .slot-break .slot-badge {
-            background-color: #fef3c7;
-            color: #b45309;
-            font-weight: 700;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* Zoom Meeting Cell */
-        .slot-zoom {
-            background-color: #f5f3ff;
-            border: 1px solid #ddd6fe;
-            color: #5b21b6;
-        }
-
-        .slot-zoom .slot-badge {
-            background-color: #ede9fe;
-            color: #6d28d9;
-            font-weight: 700;
-            font-size: 0.7rem;
-            padding: 2px 6px;
-            border-radius: 4px;
-        }
-
-        /* Empty Cell */
-        .slot-empty {
-            color: #94a3b8;
-            font-size: 1.1rem;
-            text-align: center;
-            opacity: 0.4;
-        }
-
-        .day-pill {
-            padding: 8px 18px;
-            font-weight: 600;
-            border-radius: 20px;
-            font-size: 0.9rem;
-            transition: all 0.2s ease;
-            text-decoration: none;
-        }
-
-        .btn-export {
-            font-weight: 600;
-            font-size: 0.85rem;
-            padding: 7px 14px;
-            border-radius: 8px;
-            transition: all 0.2s ease;
-        }
-
-        /* Smart Study Companion Card */
-        .companion-card {
-            background: linear-gradient(135deg, #ffffff 0%, #f0fdf4 100%);
-            border: 2px solid #86efac;
-            border-radius: 16px;
-            box-shadow: 0 10px 25px -5px rgba(16, 185, 129, 0.1);
-            position: relative;
-            overflow: hidden;
-            margin-bottom: 24px;
-        }
-
-        .companion-card.alert-mode {
-            background: linear-gradient(135deg, #ffffff 0%, #fff7ed 100%);
-            border-color: #f97316;
-            box-shadow: 0 10px 25px -5px rgba(249, 115, 22, 0.2);
-            animation: pulse-border 2s infinite;
-        }
-
-        @keyframes pulse-border {
-            0% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.4); }
-            70% { box-shadow: 0 0 0 10px rgba(249, 115, 22, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
-        }
-
-        .pulse-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #10b981;
-            border-radius: 50%;
-            display: inline-block;
-            box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
-            animation: pulse-ring 1.5s infinite cubic-bezier(0.66, 0, 0, 1);
-        }
-
-        @keyframes pulse-ring {
-            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-
-        .companion-bubble {
-            background: #ffffff;
-            border: 1px solid #cbd5e1;
-            border-left: 5px solid #2563eb;
-            border-radius: 12px;
-            padding: 14px 18px;
-            box-shadow: 0 2px 6px rgba(0,0,0,0.04);
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        .btn-companion {
-            font-weight: 600;
-            font-size: 0.85rem;
-            padding: 8px 16px;
-            border-radius: 8px;
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-companion:hover {
-            transform: translateY(-1px);
-        }
-    </style>
+    <title>Master Timetable - PrePRO AI</title>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-custom py-3">
-    <div class="container-fluid px-4">
-        <div class="d-flex align-items-center">
-            <span class="badge bg-primary fs-6 me-3"><i class="bi bi-cpu-fill me-1"></i> PREPRO AI</span>
-            <div>
-                <h5 class="fw-bold mb-0 text-dark">Master Timetable Grid</h5>
-                <span class="text-muted small">
-                    Student: <strong class="text-dark" th:text="${user.username}">Student</strong> |
-                    Exam Target: <strong class="text-primary" th:text="${user.examTarget}">JEE Advanced</strong>
-                </span>
-            </div>
-        </div>
-
-        <div class="ms-auto d-flex align-items-center gap-2">
-            <!-- Test Alarm Button Form -->
-            <form th:action="@{/test-alarm}" method="post" class="d-inline">
-                <button type="submit" class="btn btn-outline-warning btn-sm fw-semibold" title="Trigger audio beep and native system notification">
-                    <i class="bi bi-bell-fill me-1"></i> Test Desktop Alarm
-                </button>
-            </form>
-
-            <a th:href="@{/dashboard}" class="btn btn-outline-primary btn-sm fw-semibold">
-                <i class="bi bi-pencil-square me-1"></i> Edit Inputs / Regenerate
-            </a>
-
-            <a th:href="@{/logout}" class="btn btn-outline-secondary btn-sm fw-semibold">
-                <i class="bi bi-box-arrow-right me-1"></i> Logout
-            </a>
-        </div>
-    </div>
-</nav>
+<!-- Navbar Fragment -->
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
 
 <!-- Main Container -->
-<div class="container-fluid px-4 py-4">
+<main class="container-fluid px-3 px-lg-4 py-4 animate-fade-in">
 
-    <!-- Flash Alerts -->
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i> <span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <!-- Top Breadcrumb & Actions Bar -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h3 class="fw-bold mb-0">Master Study Matrix</h3>
+                <span class="badge-soft badge-soft-primary" th:text="${user.examTarget}">JEE Advanced</span>
+            </div>
+            <p class="text-muted small mb-0">
+                Fixed 1–3 month schedule &bull; X-Axis: Time Slots &bull; Y-Axis: Academic Subjects &amp; Classes
+            </p>
+        </div>
+
+        <!-- Toolbar: Regenerate & Export Icon Buttons -->
+        <div class="d-flex flex-wrap align-items-center gap-2">
+            <a th:href="@{/dashboard}" class="btn btn-secondary btn-sm">
+                <i class="bi bi-pencil-square me-1"></i> Adjust Inputs
+            </a>
+
+            <!-- Export Icon Buttons -->
+            <div class="btn-group shadow-sm" role="group" aria-label="Export Menu">
+                <a th:href="@{/export/pdf}" class="btn btn-outline-danger btn-sm" title="Download PDF document">
+                    <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
+                </a>
+                <a th:href="@{/export/excel}" class="btn btn-outline-success btn-sm" title="Download Excel .xlsx spreadsheet">
+                    <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel
+                </a>
+                <a th:href="@{/export/csv}" class="btn btn-outline-primary btn-sm" title="Download CSV file">
+                    <i class="bi bi-filetype-csv me-1"></i> CSV
+                </a>
+            </div>
+        </div>
     </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+
+    <!-- 4 Summary Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-primary-subtle text-primary">
+                    <i class="bi bi-calendar2-week-fill"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Slots</div>
+                    <div class="fs-4 fw-bold text-heading" th:text="${allSlots.size()}">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-success-subtle text-success">
+                    <i class="bi bi-book-half"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Study Blocks (30m)</div>
+                    <div class="fs-4 fw-bold text-heading" th:text="${studyCount}">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-warning-subtle text-warning">
+                    <i class="bi bi-cup-hot-fill"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Cognitive Breaks</div>
+                    <div class="fs-4 fw-bold text-heading" th:text="${breakCount}">0</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card">
+                <div class="stat-icon bg-purple-subtle text-purple">
+                    <i class="bi bi-camera-video-fill"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Zoom Lectures</div>
+                    <div class="fs-4 fw-bold text-heading" th:text="${zoomCount}">0</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- ========================================================================= -->
-    <!-- SMART STUDY COMPANION & ADAPTIVE ALARM CARD -->
+    <!-- SMART STUDY COMPANION & REAL-TIME ALARM HUB -->
     <!-- ========================================================================= -->
-    <div id="companionCard" class="card companion-card p-4">
+    <div id="companionCard" class="app-card mb-4 position-relative overflow-hidden" style="border-left: 4px solid var(--primary);">
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
             <div class="d-flex align-items-center gap-2">
                 <span class="pulse-dot"></span>
-                <span class="fw-bold text-dark text-uppercase small" style="letter-spacing: 0.5px;">
-                    Smart Study Companion &bull; Dynamic Alarm System
-                </span>
-                <span id="activeSlotBadge" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                <span class="fw-bold small text-uppercase" style="letter-spacing: 0.5px;">Live Study Companion</span>
+                <span id="activeSlotBadge" class="badge-soft badge-soft-primary">
                     Connecting Companion...
                 </span>
             </div>
 
             <!-- Companion Controls: Clock, Voice Coach, Test Alarm -->
             <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="badge bg-white text-dark border px-3 py-2 fw-semibold shadow-sm">
-                    <i class="bi bi-clock me-1 text-primary"></i> <span id="companionLiveClock">--:--:--</span>
+                <span class="badge-soft badge-soft-primary" style="font-size: 0.85rem;">
+                    <i class="bi bi-clock me-1"></i> <span id="companionLiveClock">--:--:--</span>
                 </span>
-                <button id="toggleVoiceBtn" class="btn btn-sm btn-outline-primary fw-semibold" onclick="toggleVoiceCoach()" title="Enable or mute speech alerts">
+                <button id="toggleVoiceBtn" class="btn btn-ghost btn-sm" onclick="toggleVoiceCoach()" title="Toggle spoken audio alerts">
                     <i id="voiceIcon" class="bi bi-volume-up-fill me-1"></i> Voice Coach: <span id="voiceStatusText">ON</span>
                 </button>
-                <button class="btn btn-sm btn-outline-warning fw-semibold" onclick="testSmartAlarm()" title="Hear and test the 10-minute alarm and voice prompt right now">
+                <button class="btn btn-outline-warning btn-sm" onclick="testSmartAlarm()" title="Preview the 10-minute alarm and voice prompt right now">
                     <i class="bi bi-bell-fill me-1"></i> Test 10-Min Alarm
                 </button>
-                <button id="notifyPermBtn" class="btn btn-sm btn-outline-secondary fw-semibold" onclick="requestNotificationPermission()">
-                    <i class="bi bi-app-indicator me-1"></i> Desktop Alerts
+                <button id="notifyPermBtn" class="btn btn-ghost btn-sm" onclick="requestNotificationPermission()">
+                    <i class="bi bi-app-indicator me-1"></i> Desktop Push
                 </button>
             </div>
         </div>
 
-        <!-- Companion Interactive Body -->
         <div class="row align-items-center g-3">
             <div class="col-lg-8">
-                <!-- AI Coach Dialogue Bubble -->
-                <div class="companion-bubble mb-2" id="coachBubble">
+                <!-- Dialogue Bubble -->
+                <div class="app-card p-3 bg-surface-secondary border mb-2">
                     <div class="d-flex align-items-start gap-3">
-                        <div class="fs-3 text-primary"><i class="bi bi-chat-heart-fill"></i></div>
+                        <div class="fs-4 text-primary"><i class="bi bi-chat-heart-fill"></i></div>
                         <div>
-                            <div class="fw-bold text-dark mb-1" id="coachTitle">AI Study Assistant:</div>
-                            <div class="text-secondary" id="coachMessage">
-                                Analyzing your timetable and real-time schedule...
+                            <div class="fw-bold text-heading small mb-1" id="coachTitle">AI Study Assistant:</div>
+                            <div class="small text-muted" id="coachMessage">
+                                Analyzing your timetable and real-time study pace...
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Live Progress Bar (for current session) -->
+                <!-- Session Progress Bar -->
                 <div id="sessionProgressWrapper" class="mt-2" style="display: none;">
                     <div class="d-flex justify-content-between small text-muted mb-1">
-                        <span id="progressSubjectLabel">Subject Focus</span>
+                        <span id="progressSubjectLabel" class="fw-semibold">Focus Session</span>
                         <span id="progressCountdown" class="fw-bold text-primary">-- mins left</span>
                     </div>
-                    <div class="progress" style="height: 8px;">
-                        <div id="sessionProgressBar" class="progress-bar progress-bar-striped progress-bar-animated bg-success" role="progressbar" style="width: 50%;"></div>
+                    <div class="progress" style="height: 6px; border-radius: var(--radius-full);">
+                        <div id="sessionProgressBar" class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 50%;"></div>
                     </div>
                 </div>
             </div>
 
+            <!-- Instant Actions -->
             <div class="col-lg-4 text-lg-end text-start">
-                <div class="small text-muted fw-bold text-uppercase mb-2">Instant Schedule Actions:</div>
+                <div class="small text-muted fw-bold text-uppercase mb-2" style="font-size: 0.72rem; letter-spacing: 0.5px;">Instant Schedule Controls:</div>
                 <div class="d-flex flex-wrap gap-2 justify-content-lg-end justify-content-start">
-                    <!-- Keep Going / Extend Buttons -->
-                    <button id="extend30Btn" class="btn btn-sm btn-success btn-companion" onclick="extendCurrentSlot(30)" title="Extend this subject session by 30 minutes">
+                    <button id="extend30Btn" class="btn btn-success btn-sm" onclick="extendCurrentSlot(30)" title="Extend this session by 30 minutes">
                         <i class="bi bi-plus-circle-fill"></i> Keep Going (+30m)
                     </button>
-                    <button id="extend60Btn" class="btn btn-sm btn-outline-success btn-companion" onclick="extendCurrentSlot(60)" title="Extend this subject session by 1 hour">
+                    <button id="extend60Btn" class="btn btn-outline-success btn-sm" onclick="extendCurrentSlot(60)" title="Extend by 1 full hour">
                         <i class="bi bi-lightning-charge-fill"></i> +1 Hour
                     </button>
-
-                    <!-- Switch Subject Button (if bored or needs change) -->
-                    <button id="switchBtn" class="btn btn-sm btn-outline-primary btn-companion" onclick="openSwitchModal()" title="Bored of this subject? Switch to another immediately!">
+                    <button id="switchBtn" class="btn btn-outline-primary btn-sm" onclick="openSwitchModal()" title="Bored of this subject? Switch immediately">
                         <i class="bi bi-arrow-repeat"></i> Switch Subject
                     </button>
-
-                    <!-- Take a Break Button -->
-                    <button id="breakBtn" class="btn btn-sm btn-outline-warning btn-companion text-dark" onclick="takeBreakNow(10)" title="Need a breather? Take a 10-minute cognitive break">
-                        <i class="bi bi-cup-hot-fill"></i> Take Break (10m)
+                    <button id="breakBtn" class="btn btn-outline-warning btn-sm" onclick="takeBreakNow(10)" title="Take a 10-minute cognitive break">
+                        <i class="bi bi-cup-hot-fill"></i> Take Break
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Stats Summary Row -->
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-primary-subtle text-primary">
-                    <i class="bi bi-calendar2-week-fill"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">TOTAL MASTER SLOTS</div>
-                    <div class="fs-4 fw-bold text-dark" th:text="${allSlots.size()}">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-success-subtle text-success">
-                    <i class="bi bi-book-half"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">STUDY BLOCKS (30m)</div>
-                    <div class="fs-4 fw-bold text-dark" th:text="${studyCount}">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-warning-subtle text-warning">
-                    <i class="bi bi-cup-hot-fill"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">COGNITIVE BREAKS</div>
-                    <div class="fs-4 fw-bold text-dark" th:text="${breakCount}">0</div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3">
-            <div class="stat-card">
-                <div class="stat-icon bg-purple-subtle text-purple" style="background-color: #f3e8ff; color: #7e22ce;">
-                    <i class="bi bi-camera-video-fill"></i>
-                </div>
-                <div>
-                    <div class="text-muted small fw-semibold">ZOOM SESSIONS</div>
-                    <div class="fs-4 fw-bold text-dark" th:text="${zoomCount}">0</div>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- Master Timetable Card with Day Tabs -->
+    <div class="app-card mb-4">
 
-    <!-- Master Timetable Card -->
-    <div class="card card-custom p-4">
-
-        <!-- Top Controls: Day Selector Pills & Export Toolbar -->
-        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom">
-            <!-- Day Selector Pills -->
-            <div class="d-flex flex-wrap align-items-center gap-2">
-                <span class="text-muted small fw-bold text-uppercase me-2"><i class="bi bi-filter me-1"></i> Day:</span>
+        <!-- Day Selector Pill Navigation -->
+        <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
+            <div class="d-flex flex-wrap align-items-center gap-1_5">
+                <span class="text-muted small fw-bold text-uppercase me-2" style="font-size: 0.75rem;">Day:</span>
                 <a th:each="d : ${allDays}"
                    th:href="@{/timetable(day=${d})}"
                    th:text="${d}"
-                   th:classappend="${d.equalsIgnoreCase(activeDay)} ? 'btn-primary text-white shadow-sm' : 'btn-outline-secondary text-secondary'"
+                   th:classappend="${d.equalsIgnoreCase(activeDay)} ? 'btn-primary' : 'btn-ghost'"
                    class="btn btn-sm rounded-pill fw-semibold px-3">
                     Monday
                 </a>
             </div>
 
-            <!-- Export Buttons -->
-            <div class="d-flex align-items-center gap-2">
-                <span class="text-muted small fw-bold text-uppercase me-1"><i class="bi bi-download me-1"></i> Export:</span>
-                <a th:href="@{/export/pdf}" class="btn btn-outline-danger btn-export" title="Export as PDF Document">
-                    <i class="bi bi-file-earmark-pdf-fill me-1"></i> PDF
-                </a>
-                <a th:href="@{/export/excel}" class="btn btn-outline-success btn-export" title="Export as Excel Spreadsheet">
-                    <i class="bi bi-file-earmark-excel-fill me-1"></i> Excel (.xlsx)
-                </a>
-                <a th:href="@{/export/csv}" class="btn btn-outline-primary btn-export" title="Export as CSV File">
-                    <i class="bi bi-filetype-csv me-1"></i> CSV
-                </a>
-            </div>
-        </div>
-
-        <!-- Section Title & Grid Description -->
-        <div class="d-flex align-items-center justify-content-between mb-3">
-            <div>
-                <h5 class="fw-bold mb-1">
-                    <i class="bi bi-grid-3x3-gap-fill text-primary me-2"></i>
-                    <span th:text="${activeDay}">Monday</span> Schedule Grid
-                </h5>
-                <p class="text-muted small mb-0">
-                    <strong>Fixed Master Timetable:</strong> Horizontal X-Axis represents time blocks, Vertical Y-Axis represents subjects and activity categories.
-                </p>
-            </div>
             <div class="d-flex align-items-center gap-3 small text-muted">
-                <span><span class="badge bg-success-subtle text-success border border-success-subtle me-1">&nbsp;</span> Study (30m)</span>
-                <span><span class="badge bg-warning-subtle text-warning border border-warning-subtle me-1">&nbsp;</span> Break (5-10m)</span>
-                <span><span class="badge bg-purple-subtle text-primary border me-1">&nbsp;</span> Zoom Online Class</span>
+                <span><span class="badge-soft badge-soft-success me-1">&bull;</span> Study (30m)</span>
+                <span><span class="badge-soft badge-soft-warning me-1">&bull;</span> Break (10m)</span>
+                <span><span class="badge-soft badge-soft-purple me-1">&bull;</span> Zoom Class</span>
             </div>
         </div>
 
-        <!-- Empty State If No Slots for Day -->
-        <div th:if="${timeSlots.isEmpty()}" class="alert alert-light text-center py-5 border">
+        <!-- Empty State -->
+        <div th:if="${timeSlots.isEmpty()}" class="alert alert-light text-center py-5 border rounded-3">
             <i class="bi bi-calendar-x text-muted display-4 d-block mb-3"></i>
-            <h5 class="fw-bold text-secondary">No slots scheduled for <span th:text="${activeDay}"></span></h5>
-            <p class="text-muted small mb-3">You can generate a schedule or pick another day from the selector above.</p>
-            <a th:href="@{/dashboard}" class="btn btn-primary btn-sm">Go to Input Dashboard</a>
+            <h5 class="fw-bold text-heading">No slots scheduled for <span th:text="${activeDay}"></span></h5>
+            <p class="text-muted small mb-3">Choose another day or generate a new study timetable.</p>
+            <a th:href="@{/dashboard}" class="btn btn-primary btn-sm">Open Input Dashboard</a>
         </div>
 
         <!-- 2D Fixed Master Timetable Grid (X: Time Slots, Y: Subjects) -->
-        <div th:if="${!timeSlots.isEmpty()}" class="table-grid-wrapper mb-4">
-            <table class="timetable-table">
+        <div th:if="${!timeSlots.isEmpty()}" class="grid-container mb-4">
+            <table class="timetable-grid-table">
                 <thead>
                     <tr>
                         <th scope="col">Subject \ Time Slot</th>
@@ -541,7 +223,7 @@
                                 <span th:text="${entry.key}"></span>
                             </span>
                             <span th:if="${entry.key.contains('🎥')}">
-                                <i class="bi bi-camera-video-fill text-primary me-1"></i>
+                                <i class="bi bi-camera-video-fill text-purple me-1"></i>
                                 <span th:text="${entry.key}"></span>
                             </span>
                             <span th:if="${!entry.key.contains('☕') and !entry.key.contains('🎥')}">
@@ -553,8 +235,7 @@
                         <!-- Cell for each Time Slot Column -->
                         <td th:each="ts : ${timeSlots}">
                             <th:block th:with="slot = ${entry.value.get(ts)}">
-                                <!-- Cell Case 1: Slot Exists -->
-                                <div th:if="${slot != null}">
+                                <div th:if="${slot != null}" class="h-100">
 
                                     <!-- 1A: STUDY Slot -->
                                     <div th:if="${slot.slotType.name() == 'STUDY'}" class="slot-card slot-study"
@@ -563,16 +244,14 @@
                                          th:title="'Click to focus Companion & trigger 10-Min Smart Alarm for ' + ${slot.subject}">
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="slot-badge" th:text="${slot.subject}">STUDY</span>
-                                                <small class="text-muted fw-bold" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <span class="badge-soft badge-soft-success py-0 px-1_5" style="font-size: 0.68rem;" th:text="${slot.subject}">STUDY</span>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
                                             </div>
-                                            <div class="fw-bold text-dark small" th:text="${slot.topic}">Topic Name</div>
+                                            <div class="fw-bold small text-truncate" th:text="${slot.topic}">Topic</div>
                                         </div>
                                         <div class="mt-2 d-flex align-items-center justify-content-between">
-                                            <span class="badge bg-success-subtle text-success border border-success-subtle py-1 px-2" style="font-size: 0.7rem;">
-                                                <i class="bi bi-bell-fill me-1"></i>Focus Alarm
-                                            </span>
-                                            <small class="text-success fw-semibold"><i class="bi bi-check-circle me-1"></i>30 Min</small>
+                                            <span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-bell me-1"></i>Alarm Ready</span>
+                                            <small class="text-success fw-bold" style="font-size: 0.75rem;">30 Min</small>
                                         </div>
                                     </div>
 
@@ -580,16 +259,16 @@
                                     <div th:if="${slot.slotType.name() == 'BREAK'}" class="slot-card slot-break">
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="slot-badge">BREAK</span>
-                                                <small class="text-muted fw-bold" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <span class="badge-soft badge-soft-warning py-0 px-1_5" style="font-size: 0.68rem;">BREAK</span>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
                                             </div>
-                                            <div class="small fw-semibold text-dark">
+                                            <div class="small fw-semibold text-truncate">
                                                 <i class="bi bi-cup-hot-fill text-warning me-1"></i>
-                                                <span th:text="${slot.topic != null and !slot.topic.isBlank() ? slot.topic : 'Cognitive Reset'}">Cognitive Rest</span>
+                                                <span th:text="${slot.topic != null and !slot.topic.isBlank() ? slot.topic : 'Cognitive Reset'}">Reset</span>
                                             </div>
                                         </div>
                                         <div class="mt-2 text-end">
-                                            <small class="text-warning-emphasis fw-semibold">5-10 Min</small>
+                                            <small class="text-warning fw-bold" style="font-size: 0.75rem;">10 Min</small>
                                         </div>
                                     </div>
 
@@ -597,10 +276,10 @@
                                     <div th:if="${slot.slotType.name() == 'ZOOM_MEETING'}" class="slot-card slot-zoom">
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
-                                                <span class="slot-badge">ZOOM CLASS</span>
-                                                <small class="text-muted fw-bold" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <span class="badge-soft badge-soft-purple py-0 px-1_5" style="font-size: 0.68rem;">ZOOM</span>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
                                             </div>
-                                            <div class="fw-bold text-purple small" th:text="${slot.topic}">Live Lecture</div>
+                                            <div class="fw-bold small text-truncate" th:text="${slot.topic}">Live Lecture</div>
                                         </div>
                                         <div class="mt-2">
                                             <a th:if="${slot.meetingLink != null and !slot.meetingLink.isBlank()}"
@@ -610,17 +289,17 @@
                                                style="font-size: 0.75rem;">
                                                 <i class="bi bi-box-arrow-up-right me-1"></i> Join Zoom
                                             </a>
-                                            <span th:if="${slot.meetingLink == null or slot.meetingLink.isBlank()}" class="badge bg-secondary-subtle text-secondary small">
-                                                No URL Provided
+                                            <span th:if="${slot.meetingLink == null or slot.meetingLink.isBlank()}" class="badge-soft badge-soft-purple" style="font-size: 0.7rem;">
+                                                No Link
                                             </span>
                                         </div>
                                     </div>
 
                                 </div>
 
-                                <!-- Cell Case 2: Empty Slot -->
+                                <!-- Empty cell -->
                                 <div th:if="${slot == null}" class="slot-empty">
-                                    —
+                                    &bull;
                                 </div>
                             </th:block>
                         </td>
@@ -629,112 +308,39 @@
             </table>
         </div>
 
-        <!-- Collapsible Chronological Timeline for Selected Day -->
-        <div class="border rounded-3 p-3 bg-light">
-            <div class="d-flex align-items-center justify-content-between">
-                <span class="fw-bold text-secondary small">
-                    <i class="bi bi-list-ol me-1 text-primary"></i>
-                    Chronological Timeline for <strong class="text-dark" th:text="${activeDay}">Monday</strong> (<span th:text="${daySlots.size()}">0</span> events)
-                </span>
-                <button class="btn btn-outline-secondary btn-sm" type="button" data-bs-toggle="collapse" data-bs-target="#linearTimelineCollapse">
-                    <i class="bi bi-arrows-expand me-1"></i> Toggle Linear List
-                </button>
-            </div>
-
-            <div class="collapse mt-3" id="linearTimelineCollapse">
-                <div class="table-responsive bg-white rounded border">
-                    <table class="table table-hover table-sm mb-0 align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th class="ps-3 py-2 small fw-bold">Time</th>
-                                <th class="py-2 small fw-bold">Type</th>
-                                <th class="py-2 small fw-bold">Subject</th>
-                                <th class="py-2 small fw-bold">Topic / Details</th>
-                                <th class="pe-3 py-2 small fw-bold text-end">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="s : ${daySlots}">
-                                <td class="ps-3 fw-semibold small text-nowrap">
-                                    <i class="bi bi-clock text-muted me-1"></i>
-                                    <span th:text="${s.startTime + ' - ' + s.endTime}"></span>
-                                </td>
-                                <td>
-                                    <span th:if="${s.slotType.name() == 'STUDY'}" class="badge bg-success-subtle text-success border border-success-subtle">STUDY</span>
-                                    <span th:if="${s.slotType.name() == 'BREAK'}" class="badge bg-warning-subtle text-warning border border-warning-subtle">BREAK</span>
-                                    <span th:if="${s.slotType.name() == 'ZOOM_MEETING'}" class="badge bg-purple-subtle text-primary border">ZOOM</span>
-                                </td>
-                                <td class="fw-semibold text-dark small" th:text="${s.subject ?: '—'}"></td>
-                                <td class="small text-muted" th:text="${s.topic ?: '—'}"></td>
-                                <td class="pe-3 text-end">
-                                    <a th:if="${s.slotType.name() == 'ZOOM_MEETING' and s.meetingLink != null and !s.meetingLink.isBlank()}"
-                                       th:href="${s.meetingLink}"
-                                       target="_blank"
-                                       class="btn btn-xs btn-outline-primary py-0 px-2"
-                                       style="font-size: 0.75rem;">
-                                        Join Zoom <i class="bi bi-arrow-right-short"></i>
-                                    </a>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </div>
-
     </div>
 
-    <!-- Background Automation Status Card -->
-    <div class="card card-custom p-3 bg-white">
-        <div class="d-flex align-items-center justify-content-between">
-            <div class="d-flex align-items-center gap-3">
-                <div class="stat-icon bg-info-subtle text-info" style="width: 38px; height: 38px; font-size: 1.1rem;">
-                    <i class="bi bi-broadcast"></i>
-                </div>
-                <div>
-                    <h6 class="fw-bold mb-0 text-dark">Native Background Automation Engine Active</h6>
-                    <small class="text-muted">
-                        Scheduler runs every minute: checks 10-minute early warning alarms, fires desktop sound beeps, and automatically launches Zoom meeting URLs in your default browser.
-                    </small>
-                </div>
-            </div>
-            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fw-semibold">
-                <i class="bi bi-activity me-1"></i> Auto-Scheduler Running
-            </span>
-        </div>
-    </div>
-
-</div>
+</main>
 
 <!-- Modal for Switching Subject -->
 <div class="modal fade" id="switchSubjectModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: var(--radius-lg); background: var(--bg-surface);">
             <div class="modal-header border-bottom-0 pb-0">
-                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-arrow-repeat text-primary me-2"></i>Switch Current Subject</h5>
+                <h5 class="modal-title fw-bold text-heading"><i class="bi bi-arrow-repeat text-primary me-2"></i>Switch Current Subject</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body py-3">
                 <p class="text-muted small">
-                    Bored with the current subject or want to change your focus? Choose another subject to study right now, and PREPRO AI will update your master timetable.
+                    Bored with the current subject or want to adjust focus? Choose another subject from your list or type a custom one.
                 </p>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small text-dark">Select From Your Subjects:</label>
+                    <label class="form-label">Select From Your Subjects:</label>
                     <select id="modalSubjectSelect" class="form-select">
                         <option value="">-- Choose Subject --</option>
                     </select>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small text-dark">Or Enter Custom Subject:</label>
+                    <label class="form-label">Or Enter Custom Subject:</label>
                     <input type="text" id="modalCustomSubject" class="form-control" placeholder="Enter any subject name">
                 </div>
                 <div class="mb-3">
-                    <label class="form-label fw-semibold small text-dark">Specific Topic / Activity (Optional):</label>
-                    <input type="text" id="modalTopicInput" class="form-control" placeholder="e.g. Problem Solving, Revision, Mock Test">
+                    <label class="form-label">Specific Chapter / Topic (Optional):</label>
+                    <input type="text" id="modalTopicInput" class="form-control" placeholder="e.g. Problem Solving, Revision, Practice">
                 </div>
             </div>
             <div class="modal-footer border-top-0 pt-0">
-                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-ghost" data-bs-dismiss="modal">Cancel</button>
                 <button type="button" class="btn btn-primary fw-semibold px-4" onclick="confirmSwitchSubject()">
                     <i class="bi bi-check2-circle me-1"></i> Update Timetable
                 </button>
@@ -743,12 +349,17 @@
     </div>
 </div>
 
-<!-- Bootstrap 5 Bundle JS CDN -->
+<!-- Footer Fragment -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- Toast Container Fragment -->
+<div th:replace="~{fragments/layout :: toast-container}"></div>
+
+<!-- Bootstrap 5 JS Bundle CDN -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <!-- Live Study Companion Engine -->
 <script>
-    // Global State
     let companionState = {
         currentSlot: null,
         upcomingSlot: null,
@@ -757,9 +368,7 @@
         lastSpokenKey: null
     };
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 1. Digital Clock & Initialization
-    // ──────────────────────────────────────────────────────────────────────────
+    // 1. Digital Clock
     function updateClock() {
         const now = new Date();
         const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
@@ -769,59 +378,46 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 2. Audio Chime Synthesizer (Web Audio API - 100% Native, No MP3 Needed)
-    // ──────────────────────────────────────────────────────────────────────────
+    // 2. Harmonic Web Audio Chime (100% native synthesize)
     function playHarmonicChime() {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
             if (!AudioContext) return;
             const ctx = new AudioContext();
-
-            // 3-Tone Gentle Marimba / Chime (C5 -> E5 -> G5)
-            const notes = [523.25, 659.25, 783.99];
-            notes.forEach((freq, index) => {
+            const notes = [523.25, 659.25, 783.99]; // C5 -> E5 -> G5
+            notes.forEach((freq, idx) => {
                 const osc = ctx.createOscillator();
                 const gain = ctx.createGain();
-
                 osc.type = 'sine';
-                osc.frequency.setValueAtTime(freq, ctx.currentTime + index * 0.14);
-
-                gain.gain.setValueAtTime(0, ctx.currentTime + index * 0.14);
-                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + index * 0.14 + 0.03);
-                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + index * 0.14 + 0.9);
-
+                osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.14);
+                gain.gain.setValueAtTime(0, ctx.currentTime + idx * 0.14);
+                gain.gain.linearRampToValueAtTime(0.25, ctx.currentTime + idx * 0.14 + 0.03);
+                gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + idx * 0.14 + 0.85);
                 osc.connect(gain);
                 gain.connect(ctx.destination);
-
-                osc.start(ctx.currentTime + index * 0.14);
-                osc.stop(ctx.currentTime + index * 0.14 + 1.0);
+                osc.start(ctx.currentTime + idx * 0.14);
+                osc.stop(ctx.currentTime + idx * 0.14 + 0.95);
             });
         } catch (e) {
-            console.warn("Audio chime error:", e);
+            console.warn('Audio chime error:', e);
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 3. Web Speech Synthesis (Spoken AI Coach)
-    // ──────────────────────────────────────────────────────────────────────────
+    // 3. Web Speech Synthesis
     function speakText(text) {
         if (!companionState.voiceCoachEnabled || !('speechSynthesis' in window)) return;
         try {
-            window.speechSynthesis.cancel(); // Stop any pending speech
+            window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
             utterance.rate = 1.0;
             utterance.pitch = 1.05;
             utterance.lang = 'en-US';
-
-            // Pick a pleasant natural voice if available
             const voices = window.speechSynthesis.getVoices();
-            const preferredVoice = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
-            if (preferredVoice) utterance.voice = preferredVoice;
-
+            const preferred = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
+            if (preferred) utterance.voice = preferred;
             window.speechSynthesis.speak(utterance);
         } catch (e) {
-            console.warn("Speech synthesis error:", e);
+            console.warn('Speech synthesis error:', e);
         }
     }
 
@@ -834,52 +430,38 @@
         if (companionState.voiceCoachEnabled) {
             icon.className = 'bi bi-volume-up-fill me-1';
             text.innerText = 'ON';
-            btn.className = 'btn btn-sm btn-outline-primary fw-semibold';
             speakText("Voice coach enabled. I'll remind you 10 minutes before transitions.");
+            showToast('Voice Coach enabled.', 'info');
         } else {
             icon.className = 'bi bi-volume-mute-fill me-1';
             text.innerText = 'OFF';
-            btn.className = 'btn btn-sm btn-outline-secondary fw-semibold';
             window.speechSynthesis.cancel();
+            showToast('Voice Coach muted.', 'info');
         }
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 4. HTML5 Desktop Notification
-    // ──────────────────────────────────────────────────────────────────────────
     function requestNotificationPermission() {
         if (!('Notification' in window)) {
-            alert('Desktop notifications are not supported by your browser.');
+            showToast('Desktop push notifications not supported by browser.', 'warning');
             return;
         }
         Notification.requestPermission().then(permission => {
             const btn = document.getElementById('notifyPermBtn');
             if (permission === 'granted') {
-                btn.className = 'btn btn-sm btn-success fw-semibold';
-                btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Alerts Allowed';
-                new Notification('PREPRO AI Companion', {
-                    body: 'Smart study alarms & 10-minute warning alerts are now active!',
-                    icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
-                });
+                btn.className = 'btn btn-sm btn-ghost text-success fw-semibold';
+                btn.innerHTML = '<i class="bi bi-check2-circle me-1"></i> Push Allowed';
+                showToast('Desktop push notifications active!', 'success');
             } else {
-                btn.className = 'btn btn-sm btn-outline-danger fw-semibold';
-                btn.innerHTML = '<i class="bi bi-x-circle me-1"></i> Blocked';
+                showToast('Desktop notifications blocked.', 'warning');
             }
         });
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // 5. Polling & Real-Time Companion Status
-    // ──────────────────────────────────────────────────────────────────────────
-    function getClientDayName() {
-        return new Date().toLocaleDateString('en-US', { weekday: 'long' });
-    }
-
+    // 4. Polling & Status Resolver
+    function getClientDayName() { return new Date().toLocaleDateString('en-US', { weekday: 'long' }); }
     function getClientTime24() {
         const d = new Date();
-        const hh = String(d.getHours()).padStart(2, '0');
-        const mm = String(d.getMinutes()).padStart(2, '0');
-        return `${hh}:${mm}`;
+        return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
     }
 
     async function fetchCompanionStatus() {
@@ -888,11 +470,10 @@
             const time = getClientTime24();
             const res = await fetch(`/api/companion/status?day=${encodeURIComponent(day)}&time=${encodeURIComponent(time)}`);
             if (!res.ok) return;
-
             const data = await res.json();
             renderCompanionUI(data);
         } catch (e) {
-            console.warn("Companion fetch error:", e);
+            console.warn('Companion fetch error:', e);
         }
     }
 
@@ -903,7 +484,6 @@
             companionState.availableSubjects = data.availableSubjects;
         }
 
-        const card = document.getElementById('companionCard');
         const badge = document.getElementById('activeSlotBadge');
         const coachTitle = document.getElementById('coachTitle');
         const coachMsg = document.getElementById('coachMessage');
@@ -912,259 +492,57 @@
         const progressCountdown = document.getElementById('progressCountdown');
         const progressSubjectLabel = document.getElementById('progressSubjectLabel');
 
-        const extend30Btn = document.getElementById('extend30Btn');
-        const extend60Btn = document.getElementById('extend60Btn');
-        const switchBtn = document.getElementById('switchBtn');
-        const breakBtn = document.getElementById('breakBtn');
+        if (data.smartPrompt) coachMsg.innerText = data.smartPrompt;
 
-        // Update Coach Dialogue
-        if (data.smartPrompt) {
-            coachMsg.innerText = data.smartPrompt;
-        }
-
-        // Active slot state
         if (data.currentSlot) {
-            badge.className = 'badge bg-success-subtle text-success border border-success-subtle px-2 py-1';
+            badge.className = 'badge-soft badge-soft-success';
             badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${data.currentSlot.subject || data.currentSlot.slotType} (${data.currentSlot.startTime} - ${data.currentSlot.endTime})`;
-
             coachTitle.innerText = data.currentSlot.slotType === 'BREAK' ? '☕ Brain Break Mode:' : '📖 Active Focus Session:';
 
             progressWrapper.style.display = 'block';
             progressSubjectLabel.innerText = `${data.currentSlot.subject || 'Session'} • ${data.currentSlot.topic || ''}`;
-            progressCountdown.innerText = `⏳ ${data.currentSlot.remainingMinutes} min${data.currentSlot.remainingMinutes === 1 ? '' : 's'} remaining`;
+            progressCountdown.innerText = `⏳ ${data.currentSlot.remainingMinutes}m left`;
             progressBar.style.width = `${data.currentSlot.percentCompleted}%`;
 
-            extend30Btn.disabled = false;
-            extend60Btn.disabled = false;
-            switchBtn.disabled = false;
-            breakBtn.disabled = false;
+            document.getElementById('extend30Btn').disabled = false;
+            document.getElementById('extend60Btn').disabled = false;
+            document.getElementById('switchBtn').disabled = false;
+            document.getElementById('breakBtn').disabled = false;
         } else if (data.upcomingSlot) {
-            badge.className = 'badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1';
+            badge.className = 'badge-soft badge-soft-warning';
             badge.innerHTML = `<i class="bi bi-hourglass-split me-1"></i> Next: ${data.upcomingSlot.subject || data.upcomingSlot.slotType} at ${data.upcomingSlot.startTime}`;
-
             coachTitle.innerText = '⏳ Upcoming Session:';
             progressWrapper.style.display = 'none';
 
-            extend30Btn.disabled = true;
-            extend60Btn.disabled = true;
-            switchBtn.disabled = false; // can switch upcoming slot
-            breakBtn.disabled = true;
+            document.getElementById('extend30Btn').disabled = true;
+            document.getElementById('extend60Btn').disabled = true;
+            document.getElementById('switchBtn').disabled = false;
+            document.getElementById('breakBtn').disabled = true;
         } else {
-            badge.className = 'badge bg-secondary-subtle text-secondary px-2 py-1';
+            badge.className = 'badge-soft badge-soft-primary';
             badge.innerHTML = 'All Sessions Complete';
             coachTitle.innerText = '🎉 Day Complete:';
             progressWrapper.style.display = 'none';
 
-            extend30Btn.disabled = true;
-            extend60Btn.disabled = true;
-            switchBtn.disabled = true;
-            breakBtn.disabled = true;
+            document.getElementById('extend30Btn').disabled = true;
+            document.getElementById('extend60Btn').disabled = true;
+            document.getElementById('switchBtn').disabled = true;
+            document.getElementById('breakBtn').disabled = true;
         }
 
         // 10-Minute Warning Trigger
         if (data.warningActive) {
-            card.classList.add('alert-mode');
-
-            // Unique key to prevent constant repeating within the same minute
             const alertKey = `${data.alertType}_${data.currentTime}_${(data.currentSlot ? data.currentSlot.id : (data.upcomingSlot ? data.upcomingSlot.id : ''))}`;
-
             if (companionState.lastSpokenKey !== alertKey) {
                 companionState.lastSpokenKey = alertKey;
-
-                // Play Audio Chime
                 playHarmonicChime();
-
-                // Speak via Voice Coach
-                if (data.speechText) {
-                    setTimeout(() => speakText(data.speechText), 700);
-                }
-
-                // Show Desktop Notification
-                if ('Notification' in window && Notification.permission === 'granted') {
-                    new Notification('PREPRO AI Smart Alarm', {
-                        body: data.smartPrompt,
-                        icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
-                    });
-                }
-            }
-        } else {
-            card.classList.remove('alert-mode');
-        }
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 6. Interactive Timetable Actions (Extend, Switch, Break)
-    // ──────────────────────────────────────────────────────────────────────────
-
-    function getTargetSlotId() {
-        if (companionState.currentSlot && companionState.currentSlot.id) {
-            return companionState.currentSlot.id;
-        }
-        if (companionState.upcomingSlot && companionState.upcomingSlot.id) {
-            return companionState.upcomingSlot.id;
-        }
-        return null;
-    }
-
-    async function extendCurrentSlot(minutes) {
-        const slotId = getTargetSlotId();
-        if (!slotId) {
-            alert("No active or upcoming slot to extend right now.");
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append("slotId", slotId);
-            formData.append("minutes", minutes);
-
-            const res = await fetch("/api/companion/extend", {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                playHarmonicChime();
-                speakText(`Great flow! Extended ${minutes} more minutes until ${data.endTime}.`);
-                // Smooth refresh to re-render grid
-                setTimeout(() => window.location.reload(), 1200);
-            } else {
-                alert("Could not extend slot: " + (data.error || "Unknown error"));
-            }
-        } catch (e) {
-            console.error("Extend error:", e);
-        }
-    }
-
-    function openSwitchModal() {
-        const select = document.getElementById('modalSubjectSelect');
-        select.innerHTML = '<option value="">-- Select from your subjects --</option>';
-
-        if (companionState.availableSubjects && companionState.availableSubjects.length > 0) {
-            companionState.availableSubjects.forEach(s => {
-                const opt = document.createElement('option');
-                opt.value = s;
-                opt.innerText = s;
-                select.appendChild(opt);
-            });
-        }
-
-        const modal = new bootstrap.Modal(document.getElementById('switchSubjectModal'));
-        modal.show();
-    }
-
-    async function confirmSwitchSubject() {
-        const slotId = getTargetSlotId();
-        if (!slotId) {
-            alert("No active slot found to switch.");
-            return;
-        }
-
-        const selectVal = document.getElementById('modalSubjectSelect').value.trim();
-        const customVal = document.getElementById('modalCustomSubject').value.trim();
-        const topicVal = document.getElementById('modalTopicInput').value.trim();
-
-        const finalSubject = customVal !== "" ? customVal : selectVal;
-        if (!finalSubject) {
-            alert("Please choose or enter a subject name.");
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append("slotId", slotId);
-            formData.append("subject", finalSubject);
-            if (topicVal) formData.append("topic", topicVal);
-
-            const res = await fetch("/api/companion/switch", {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                playHarmonicChime();
-                speakText(`Subject switched to ${finalSubject}. Happy studying!`);
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                alert("Switch failed: " + (data.error || "Unknown error"));
-            }
-        } catch (e) {
-            console.error("Switch error:", e);
-        }
-    }
-
-    async function takeBreakNow(minutes) {
-        const slotId = getTargetSlotId();
-        if (!slotId) {
-            alert("No active slot to convert to a break.");
-            return;
-        }
-
-        if (!confirm(`Take a ${minutes}-minute cognitive break now? PREPRO AI will mark this slot for relaxation.`)) {
-            return;
-        }
-
-        try {
-            const formData = new FormData();
-            formData.append("slotId", slotId);
-            formData.append("minutes", minutes);
-
-            const res = await fetch("/api/companion/break", {
-                method: "POST",
-                body: formData
-            });
-
-            const data = await res.json();
-            if (data.success) {
-                playHarmonicChime();
-                speakText(`Break started! Enjoy your ${minutes} minutes of rest.`);
-                setTimeout(() => window.location.reload(), 1000);
-            } else {
-                alert("Break action failed: " + (data.error || "Unknown error"));
-            }
-        } catch (e) {
-            console.error("Break error:", e);
-        }
-    }
-
-    // ──────────────────────────────────────────────────────────────────────────
-    // 7. Dynamic Subject Resolver & Interactive Alarm System
-    // ──────────────────────────────────────────────────────────────────────────
-
-    function getActiveSubjectFromTimetable() {
-        if (companionState.currentSlot && companionState.currentSlot.subject) {
-            return companionState.currentSlot.subject;
-        }
-        if (companionState.upcomingSlot && companionState.upcomingSlot.subject) {
-            return companionState.upcomingSlot.subject;
-        }
-        if (companionState.availableSubjects && companionState.availableSubjects.length > 0) {
-            return companionState.availableSubjects[0];
-        }
-        // Extract the first subject header from the timetable table
-        const rowHeaders = document.querySelectorAll('.timetable-table tbody th');
-        for (let th of rowHeaders) {
-            const text = th.innerText.trim();
-            if (text && !text.includes('Break') && !text.includes('Meeting') && !text.includes('☕') && !text.includes('🎥')) {
-                return text;
+                if (data.speechText) setTimeout(() => speakText(data.speechText), 700);
+                showToast(data.smartPrompt, 'warning', '10-Minute Smart Alarm');
             }
         }
-        return "your scheduled subject";
     }
 
-    function getActiveTopicFromTimetable() {
-        if (companionState.currentSlot && companionState.currentSlot.topic) {
-            return companionState.currentSlot.topic;
-        }
-        if (companionState.upcomingSlot && companionState.upcomingSlot.topic) {
-            return companionState.upcomingSlot.topic;
-        }
-        return "Key Chapter";
-    }
-
-    // Triggered when a student clicks ANY subject block on the master timetable grid
+    // 5. Interactive Click-to-Arm Slot Alarm from Table
     function activateSlotAlarm(slotId, subject, topic, startTime, endTime) {
         companionState.currentSlot = {
             id: slotId,
@@ -1178,60 +556,124 @@
         };
 
         const badge = document.getElementById('activeSlotBadge');
-        badge.className = 'badge bg-success text-white px-2 py-1 shadow-sm';
+        badge.className = 'badge-soft badge-soft-success';
         badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${subject} (${startTime} - ${endTime})`;
 
         const progressWrapper = document.getElementById('sessionProgressWrapper');
-        const progressSubjectLabel = document.getElementById('progressSubjectLabel');
-        const progressCountdown = document.getElementById('progressCountdown');
-        const progressBar = document.getElementById('sessionProgressBar');
-
         progressWrapper.style.display = 'block';
-        progressSubjectLabel.innerText = `${subject} • ${topic}`;
-        progressCountdown.innerText = `⏳ 10 mins left (Ends at ${endTime})`;
-        progressBar.style.width = '66%';
+        document.getElementById('progressSubjectLabel').innerText = `${subject} • ${topic}`;
+        document.getElementById('progressCountdown').innerText = `⏳ 10m left (Ends at ${endTime})`;
+        document.getElementById('sessionProgressBar').style.width = '66%';
 
-        document.getElementById('extend30Btn').disabled = false;
-        document.getElementById('extend60Btn').disabled = false;
-        document.getElementById('switchBtn').disabled = false;
-        document.getElementById('breakBtn').disabled = false;
-
-        // Trigger smart alarm for this specific timetable subject
         triggerAlarmForSubject(subject, topic, endTime);
-
-        // Smoothly scroll to the Companion Hub
         document.getElementById('companionCard').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function triggerAlarmForSubject(subject, topic, endTime) {
         playHarmonicChime();
-
-        const card = document.getElementById('companionCard');
-        card.classList.add('alert-mode');
-        setTimeout(() => card.classList.remove('alert-mode'), 8000);
-
         const prompt = `Hey! You have 10 minutes left in ${subject} (${topic}). Do you want to continue this subject until you're bored, switch to another subject, or take a break?`;
-
         document.getElementById('coachTitle').innerText = `🔔 10-Minute Smart Alarm: ${subject}`;
-        document.getElementById('coachMessage').innerText = `⚡ ${prompt}`;
-
+        document.getElementById('coachMessage').innerText = prompt;
         speakText(prompt);
-
-        if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(`⏰ 10-Min Smart Alarm: ${subject}`, {
-                body: prompt,
-                icon: 'https://cdn-icons-png.flaticon.com/512/3898/3898150.png'
-            });
-        }
+        showToast(prompt, 'warning', `10-Minute Smart Alarm: ${subject}`);
     }
 
     function testSmartAlarm() {
-        const sub = getActiveSubjectFromTimetable();
-        const top = getActiveTopicFromTimetable();
-        triggerAlarmForSubject(sub, top, "Upcoming Block");
+        let sub = (companionState.currentSlot && companionState.currentSlot.subject) ? companionState.currentSlot.subject :
+                  (companionState.availableSubjects && companionState.availableSubjects.length > 0 ? companionState.availableSubjects[0] : 'Study Session');
+        let top = (companionState.currentSlot && companionState.currentSlot.topic) ? companionState.currentSlot.topic : 'Core Chapter';
+        triggerAlarmForSubject(sub, top, 'Upcoming Slot');
     }
 
-    // Start Poller: runs immediately and then every 8 seconds
+    // 6. Slot Extending, Switching, and Breaking
+    function getTargetSlotId() {
+        if (companionState.currentSlot && companionState.currentSlot.id) return companionState.currentSlot.id;
+        if (companionState.upcomingSlot && companionState.upcomingSlot.id) return companionState.upcomingSlot.id;
+        return null;
+    }
+
+    async function extendCurrentSlot(minutes) {
+        const slotId = getTargetSlotId();
+        if (!slotId) { showToast('No active slot to extend right now.', 'warning'); return; }
+
+        const formData = new FormData();
+        formData.append('slotId', slotId);
+        formData.append('minutes', minutes);
+
+        const res = await fetch('/api/companion/extend', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            playHarmonicChime();
+            speakText(`Great flow! Extended ${minutes} more minutes until ${data.endTime}.`);
+            showToast(`Extended ${minutes}m until ${data.endTime}!`, 'success');
+            setTimeout(() => window.location.reload(), 1200);
+        } else {
+            showToast(data.error || 'Could not extend slot', 'error');
+        }
+    }
+
+    function openSwitchModal() {
+        const select = document.getElementById('modalSubjectSelect');
+        select.innerHTML = '<option value="">-- Select from your subjects --</option>';
+        if (companionState.availableSubjects && companionState.availableSubjects.length > 0) {
+            companionState.availableSubjects.forEach(s => {
+                const opt = document.createElement('option');
+                opt.value = s;
+                opt.innerText = s;
+                select.appendChild(opt);
+            });
+        }
+        new bootstrap.Modal(document.getElementById('switchSubjectModal')).show();
+    }
+
+    async function confirmSwitchSubject() {
+        const slotId = getTargetSlotId();
+        if (!slotId) { showToast('No active slot to switch.', 'warning'); return; }
+
+        const selectVal = document.getElementById('modalSubjectSelect').value.trim();
+        const customVal = document.getElementById('modalCustomSubject').value.trim();
+        const topicVal = document.getElementById('modalTopicInput').value.trim();
+        const finalSubject = customVal !== '' ? customVal : selectVal;
+
+        if (!finalSubject) { showToast('Please select or type a subject.', 'warning'); return; }
+
+        const formData = new FormData();
+        formData.append('slotId', slotId);
+        formData.append('subject', finalSubject);
+        if (topicVal) formData.append('topic', topicVal);
+
+        const res = await fetch('/api/companion/switch', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            playHarmonicChime();
+            speakText(`Subject switched to ${finalSubject}.`);
+            showToast(`Switched to ${finalSubject}!`, 'success');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Switch failed.', 'error');
+        }
+    }
+
+    async function takeBreakNow(minutes) {
+        const slotId = getTargetSlotId();
+        if (!slotId) { showToast('No active slot to convert to break.', 'warning'); return; }
+
+        const formData = new FormData();
+        formData.append('slotId', slotId);
+        formData.append('minutes', minutes);
+
+        const res = await fetch('/api/companion/break', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (data.success) {
+            playHarmonicChime();
+            speakText(`Break started! Enjoy your ${minutes} minutes of rest.`);
+            showToast(`Break started (${minutes}m)!`, 'info');
+            setTimeout(() => window.location.reload(), 1000);
+        } else {
+            showToast(data.error || 'Break action failed.', 'error');
+        }
+    }
+
     fetchCompanionStatus();
     setInterval(fetchCompanionStatus, 8000);
 </script>

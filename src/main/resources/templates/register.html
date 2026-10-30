@@ -1,158 +1,109 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="~{fragments/layout :: header('Create Account - PrePRO AI')}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account - PREPRO AI Study Planner</title>
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        :root {
-            --primary-blue: #2563eb;
-            --primary-dark: #1d4ed8;
-            --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #3b82f6 100%);
-        }
-
-        body {
-            background: var(--bg-gradient);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            padding: 24px 16px;
-        }
-
-        .auth-card {
-            background: #ffffff;
-            border-radius: 16px;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
-            max-width: 480px;
-            width: 100%;
-            padding: 40px 32px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .badge-brand {
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            font-weight: 700;
-            font-size: 0.75rem;
-            padding: 5px 12px;
-            border-radius: 20px;
-            display: inline-block;
-            letter-spacing: 0.5px;
-        }
-
-        .btn-auth {
-            background-color: var(--primary-blue);
-            border: none;
-            padding: 13px;
-            font-weight: 600;
-            font-size: 1rem;
-            border-radius: 10px;
-            transition: all 0.2s ease;
-        }
-
-        .btn-auth:hover {
-            background-color: var(--primary-dark);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-        }
-
-        .form-control:focus, .form-select:focus {
-            border-color: #3b82f6;
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
-        }
-    </style>
+    <title>Create Account - PrePRO AI</title>
 </head>
-<body>
+<body class="d-flex align-items-center justify-content-center min-vh-100 py-4">
 
-<div class="container d-flex justify-content-center">
-    <div class="auth-card">
-        <!-- Brand Header -->
-        <div class="mb-4 text-center">
-            <span class="badge-brand mb-2"><i class="bi bi-person-plus-fill me-1"></i> STUDENT REGISTRATION</span>
-            <h3 class="fw-bold text-dark mt-2 mb-1">Create an Account</h3>
-            <p class="text-muted small">Join PREPRO AI to generate psychology-backed study routines.</p>
-        </div>
+    <!-- Top floating bar for theme toggle -->
+    <div class="position-absolute top-0 end-0 p-3">
+        <button type="button" id="themeToggleBtn" class="btn btn-ghost btn-icon-only" onclick="toggleTheme()" title="Toggle Theme (Light / Dark)">
+            <i class="bi bi-moon-stars-fill text-secondary fs-5"></i>
+        </button>
+    </div>
 
-        <!-- Error Notification -->
-        <div th:if="${registrationError != null or param.error != null}" class="alert alert-danger alert-dismissible fade show py-2 small" role="alert">
-            <i class="bi bi-exclamation-triangle-fill me-1"></i>
-            <span th:if="${registrationError != null}" th:text="${registrationError}"></span>
-            <span th:if="${registrationError == null and param.error != null}">
-                <span th:if="${param.error[0] == 'username_taken'}">This username is already taken. Please choose another.</span>
-                <span th:if="${param.error[0] == 'password_mismatch'}">Passwords do not match. Please ensure both passwords are identical.</span>
-                <span th:if="${param.error[0] == 'blank_fields'}">Username and password cannot be empty.</span>
-                <span th:if="${param.error[0] == 'short_password'}">Password must be at least 6 characters long.</span>
-            </span>
-            <button type="button" class="btn-close btn-close-sm" data-bs-dismiss="alert"></button>
-        </div>
+    <!-- Main Registration Card -->
+    <div class="container animate-fade-in" style="max-width: 480px;">
+        <div class="app-card app-card-elevated p-4 p-sm-5 text-center position-relative">
 
-        <!-- Registration Form with Automatic CSRF Token Injection -->
-        <form th:action="@{/register}" th:object="${registrationDto}" method="post">
-            <div class="mb-3">
-                <label for="username" class="form-label fw-semibold small text-secondary">Student Username</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-person-fill"></i></span>
-                    <input type="text" class="form-control" id="username" th:field="*{username}" required autofocus placeholder="e.g. AlexJohnson">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="password" class="form-label fw-semibold small text-secondary">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-lock-fill"></i></span>
-                    <input type="password" class="form-control" id="password" th:field="*{password}" required placeholder="At least 6 characters">
-                </div>
-            </div>
-
-            <div class="mb-3">
-                <label for="confirmPassword" class="form-label fw-semibold small text-secondary">Confirm Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-check2-circle"></i></span>
-                    <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" required placeholder="Re-enter your password">
-                </div>
-            </div>
-
+            <!-- Brand Icon & Header -->
             <div class="mb-4">
-                <label for="examTarget" class="form-label fw-semibold small text-secondary">Target Competitive Exam</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-light text-muted"><i class="bi bi-mortarboard-fill"></i></span>
-                    <select class="form-select" id="examTarget" th:field="*{examTarget}" required>
-                        <option value="JEE Advanced" selected>JEE Advanced</option>
-                        <option value="JEE Mains">JEE Mains</option>
-                        <option value="NEET (Medical)">NEET (Medical)</option>
-                        <option value="UPSC Civil Services">UPSC Civil Services</option>
-                        <option value="CBSE Class 12 Boards">CBSE Class 12 Boards</option>
-                        <option value="GATE">GATE</option>
-                        <option value="SAT / College Entrance">SAT / College Entrance</option>
-                    </select>
+                <div class="brand-icon mx-auto mb-3" style="width: 48px; height: 48px; font-size: 1.4rem;">
+                    <i class="bi bi-person-plus-fill"></i>
+                </div>
+                <h3 class="fw-bold mb-1">Join PrePRO AI</h3>
+                <p class="text-muted small mb-0">Create your account to unlock adaptive AI study scheduling.</p>
+            </div>
+
+            <!-- Inline Error Messages -->
+            <div th:if="${registrationError != null or param.error != null}" class="alert alert-danger d-flex align-items-center gap-2 py-2 px-3 small rounded-3 text-start mb-3" role="alert">
+                <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                <div class="flex-grow-1">
+                    <span th:if="${registrationError != null}" th:text="${registrationError}"></span>
+                    <span th:if="${registrationError == null and param.error != null}">
+                        <span th:if="${param.error[0] == 'username_taken'}">This username is already taken. Please choose another.</span>
+                        <span th:if="${param.error[0] == 'password_mismatch'}">Passwords do not match. Please verify your password.</span>
+                        <span th:if="${param.error[0] == 'blank_fields'}">Username and password cannot be empty.</span>
+                        <span th:if="${param.error[0] == 'short_password'}">Password must be at least 6 characters long.</span>
+                    </span>
                 </div>
             </div>
 
-            <button type="submit" class="btn btn-primary btn-auth w-100 text-white mb-3 shadow-sm">
-                <i class="bi bi-person-check-fill me-1"></i> Create Account
-            </button>
+            <!-- Registration Form -->
+            <form th:action="@{/register}" th:object="${registrationDto}" method="post" class="text-start">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Student Username</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                        <input type="text" class="form-control" id="username" th:field="*{username}" required autofocus placeholder="e.g. AlexMorgan">
+                    </div>
+                </div>
 
-            <!-- Bottom Link to Login -->
-            <div class="text-center pt-2">
-                <span class="text-muted small">Already have an account?</span>
-                <a th:href="@{/login}" class="small fw-bold text-primary text-decoration-none ms-1">Sign In</a>
+                <div class="row g-2 mb-3">
+                    <div class="col-sm-6">
+                        <label for="password" class="form-label">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" class="form-control" id="password" th:field="*{password}" required placeholder="Min 6 chars">
+                        </div>
+                    </div>
+                    <div class="col-sm-6">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-check2-circle"></i></span>
+                            <input type="password" class="form-control" id="confirmPassword" th:field="*{confirmPassword}" required placeholder="Re-enter password">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label for="examTarget" class="form-label">Target Competitive Exam</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-mortarboard-fill"></i></span>
+                        <select class="form-select" id="examTarget" th:field="*{examTarget}" required>
+                            <option value="JEE Advanced" selected>JEE Advanced</option>
+                            <option value="JEE Mains">JEE Mains</option>
+                            <option value="NEET (Medical)">NEET (Medical)</option>
+                            <option value="UPSC Civil Services">UPSC Civil Services</option>
+                            <option value="CBSE Class 12 Boards">CBSE Class 12 Boards</option>
+                            <option value="GATE">GATE</option>
+                            <option value="SAT / College Entrance">SAT / College Entrance</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Primary Action -->
+                <button type="submit" class="btn btn-primary w-100 py-2_5 fw-semibold mb-3">
+                    <i class="bi bi-person-check-fill me-1"></i> Create Free Account
+                </button>
+
+                <!-- Navigation link to Sign In -->
+                <div class="text-center pt-2">
+                    <span class="text-muted small">Already registered?</span>
+                    <a th:href="@{/login}" class="small fw-bold text-primary ms-1">Sign In</a>
+                </div>
+            </form>
+
+            <div class="mt-4 pt-3 text-center border-top" style="border-color: var(--border-color) !important;">
+                <span class="text-muted small" style="font-size: 0.76rem;">
+                    <i class="bi bi-shield-check text-success me-1"></i> Passwords encrypted with standard enterprise BCrypt hashing.
+                </span>
             </div>
-        </form>
-
-        <div class="mt-4 pt-3 text-center border-top">
-            <span class="text-muted small" style="font-size: 0.78rem;">
-                <i class="bi bi-shield-check text-success me-1"></i> Passwords are encrypted using enterprise BCrypt hashing.
-            </span>
         </div>
     </div>
-</div>
 
-<!-- Bootstrap 5 JS Bundle CDN -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Bootstrap 5 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

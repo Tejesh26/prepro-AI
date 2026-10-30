@@ -1,0 +1,768 @@
+/* =============================================================================
+   PREPRO AI - Design System & Modern Stylesheet
+   Typography: Plus Jakarta Sans / Inter
+   Theme: Auto / Light / Dark Mode support via CSS variables
+   Animations: GPU-accelerated (transform, opacity only, respects reduced-motion)
+============================================================================= */
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+/* -----------------------------------------------------------------------------
+   1. CSS Custom Properties / Design Tokens
+----------------------------------------------------------------------------- */
+:root {
+    /* Brand Colors */
+    --primary: #4f46e5;
+    --primary-hover: #4338ca;
+    --primary-active: #3730a3;
+    --primary-subtle: #eef2ff;
+    --primary-text: #4338ca;
+
+    --accent: #06b6d4;
+    --accent-hover: #0891b2;
+    --accent-subtle: #ecfeff;
+
+    --success: #10b981;
+    --success-subtle: #ecfdf5;
+    --success-border: #a7f3d0;
+    --success-text: #065f46;
+
+    --warning: #f59e0b;
+    --warning-subtle: #fffbeb;
+    --warning-border: #fde68a;
+    --warning-text: #92400e;
+
+    --danger: #ef4444;
+    --danger-subtle: #fef2f2;
+    --danger-border: #fecaca;
+    --danger-text: #991b1b;
+
+    --purple: #8b5cf6;
+    --purple-subtle: #f5f3ff;
+    --purple-border: #ddd6fe;
+    --purple-text: #5b21b6;
+
+    /* Light Theme Surfaces & Grays */
+    --bg-page: #f8fafc;
+    --bg-surface: #ffffff;
+    --bg-surface-secondary: #f1f5f9;
+    --bg-surface-elevated: #ffffff;
+    --border-color: #e2e8f0;
+    --border-subtle: #f1f5f9;
+
+    --text-heading: #0f172a;
+    --text-body: #334155;
+    --text-muted: #64748b;
+    --text-disabled: #94a3b8;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.04);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.03);
+    --shadow-hover: 0 12px 24px -4px rgba(79, 70, 229, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.04);
+    --shadow-glow: 0 0 20px rgba(79, 70, 229, 0.25);
+
+    /* Radii */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --radius-full: 9999px;
+
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 400ms cubic-bezier(0.4, 0, 0.2, 1);
+
+    /* Navbar */
+    --nav-bg: rgba(255, 255, 255, 0.85);
+    --nav-border: #e2e8f0;
+}
+
+/* -----------------------------------------------------------------------------
+   Dark Theme Overrides
+----------------------------------------------------------------------------- */
+[data-theme="dark"],
+[data-bs-theme="dark"] {
+    --primary: #6366f1;
+    --primary-hover: #4f46e5;
+    --primary-active: #4338ca;
+    --primary-subtle: #1e1b4b;
+    --primary-text: #a5b4fc;
+
+    --accent: #22d3ee;
+    --accent-hover: #06b6d4;
+    --accent-subtle: #083344;
+
+    --success: #34d399;
+    --success-subtle: #064e3b;
+    --success-border: #047857;
+    --success-text: #a7f3d0;
+
+    --warning: #fbbf24;
+    --warning-subtle: #451a03;
+    --warning-border: #b45309;
+    --warning-text: #fde68a;
+
+    --danger: #f87171;
+    --danger-subtle: #450a0a;
+    --danger-border: #b91c1c;
+    --danger-text: #fecaca;
+
+    --purple: #a78bfa;
+    --purple-subtle: #2e1065;
+    --purple-border: #6d28d9;
+    --purple-text: #ddd6fe;
+
+    /* Dark Surfaces */
+    --bg-page: #0b0f19;
+    --bg-surface: #111827;
+    --bg-surface-secondary: #1f2937;
+    --bg-surface-elevated: #1a2234;
+    --border-color: #273142;
+    --border-subtle: #1e293b;
+
+    --text-heading: #f8fafc;
+    --text-body: #cbd5e1;
+    --text-muted: #94a3b8;
+    --text-disabled: #64748b;
+
+    /* Shadows */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.35);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.45), 0 2px 4px -2px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.55), 0 4px 6px -4px rgba(0, 0, 0, 0.4);
+    --shadow-hover: 0 12px 24px -4px rgba(99, 102, 241, 0.25), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-glow: 0 0 25px rgba(99, 102, 241, 0.35);
+
+    /* Navbar */
+    --nav-bg: rgba(17, 24, 39, 0.85);
+    --nav-border: #1f2937;
+}
+
+/* -----------------------------------------------------------------------------
+   2. Reset & Typography
+----------------------------------------------------------------------------- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--bg-page);
+    color: var(--text-body);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-size: 0.95rem;
+    line-height: 1.55;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: background-color var(--transition-normal), color var(--transition-normal);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+    color: var(--text-heading);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+}
+
+p, span, li {
+    letter-spacing: -0.01em;
+}
+
+a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+a:hover {
+    color: var(--primary-hover);
+}
+
+/* Visible accessible focus */
+:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   3. Navbar & Header
+----------------------------------------------------------------------------- */
+.navbar-app {
+    background-color: var(--nav-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid var(--nav-border);
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+    transition: background-color var(--transition-normal), border-color var(--transition-normal);
+}
+
+.brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 800;
+    font-size: 1.15rem;
+    color: var(--text-heading);
+    text-decoration: none;
+}
+
+.brand-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-md);
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.3);
+}
+
+.brand-badge {
+    background: var(--primary-subtle);
+    color: var(--primary);
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: var(--radius-full);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* -----------------------------------------------------------------------------
+   4. Surfaces, Cards & Containers
+----------------------------------------------------------------------------- */
+.app-card {
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 24px;
+    box-shadow: var(--shadow-sm);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast), background-color var(--transition-normal);
+}
+
+.app-card-interactive:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-hover);
+    border-color: rgba(79, 70, 229, 0.3);
+}
+
+.app-card-elevated {
+    background-color: var(--bg-surface-elevated);
+    box-shadow: var(--shadow-md);
+}
+
+/* Stat Card */
+.stat-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   5. Buttons & Interactive Elements
+----------------------------------------------------------------------------- */
+.btn {
+    border-radius: var(--radius-sm);
+    font-weight: 600;
+    font-size: 0.9rem;
+    padding: 9px 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.btn:active {
+    transform: scale(0.97);
+}
+
+.btn-primary {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 2px 6px rgba(79, 70, 229, 0.25);
+}
+
+.btn-primary:hover, .btn-primary:focus {
+    background-color: var(--primary-hover);
+    border-color: var(--primary-hover);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
+}
+
+.btn-outline-primary {
+    color: var(--primary);
+    border-color: var(--primary);
+    background-color: transparent;
+}
+
+.btn-outline-primary:hover {
+    background-color: var(--primary-subtle);
+    color: var(--primary);
+    border-color: var(--primary);
+}
+
+.btn-secondary {
+    background-color: var(--bg-surface-secondary);
+    border-color: var(--border-color);
+    color: var(--text-heading);
+}
+
+.btn-secondary:hover {
+    background-color: var(--border-color);
+    color: var(--text-heading);
+}
+
+.btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+}
+
+.btn-ghost:hover {
+    background: var(--bg-surface-secondary);
+    color: var(--text-heading);
+}
+
+.btn-icon-only {
+    width: 38px;
+    height: 38px;
+    padding: 0;
+    border-radius: var(--radius-sm);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* -----------------------------------------------------------------------------
+   6. Form Controls
+----------------------------------------------------------------------------- */
+.form-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 6px;
+}
+
+.form-control, .form-select {
+    background-color: var(--bg-surface);
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    color: var(--text-heading);
+    padding: 10px 14px;
+    font-size: 0.92rem;
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-normal);
+}
+
+.form-control:focus, .form-select:focus {
+    background-color: var(--bg-surface);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.18);
+    color: var(--text-heading);
+    outline: none;
+}
+
+.form-control::placeholder {
+    color: var(--text-disabled);
+    font-size: 0.88rem;
+}
+
+.input-group-text {
+    background-color: var(--bg-surface-secondary);
+    border: 1.5px solid var(--border-color);
+    color: var(--text-muted);
+    border-radius: var(--radius-md);
+}
+
+/* -----------------------------------------------------------------------------
+   7. Badges & Indicators
+----------------------------------------------------------------------------- */
+.badge-soft {
+    font-weight: 600;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: var(--radius-full);
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.badge-soft-primary { background: var(--primary-subtle); color: var(--primary); }
+.badge-soft-success { background: var(--success-subtle); color: var(--success-text); }
+.badge-soft-warning { background: var(--warning-subtle); color: var(--warning-text); }
+.badge-soft-danger  { background: var(--danger-subtle);  color: var(--danger-text);  }
+.badge-soft-purple  { background: var(--purple-subtle);  color: var(--purple-text);  }
+
+.pulse-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: var(--success);
+    display: inline-block;
+    box-shadow: 0 0 0 rgba(16, 185, 129, 0.7);
+    animation: pulse-ring 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+@keyframes pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+    70% { box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+/* -----------------------------------------------------------------------------
+   8. Stepper / Progress Wizard
+----------------------------------------------------------------------------- */
+.stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 28px;
+}
+
+.stepper-wrapper::before {
+    content: '';
+    position: absolute;
+    top: 18px;
+    left: 24px;
+    right: 24px;
+    height: 2px;
+    background: var(--border-color);
+    z-index: 1;
+}
+
+.step-item {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    flex: 1;
+}
+
+.step-circle {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-surface);
+    border: 2px solid var(--border-color);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.9rem;
+    transition: all var(--transition-normal);
+}
+
+.step-item.active .step-circle {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+    box-shadow: 0 0 0 4px var(--primary-subtle);
+}
+
+.step-item.completed .step-circle {
+    background: var(--success);
+    border-color: var(--success);
+    color: #ffffff;
+}
+
+.step-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-top: 6px;
+}
+
+.step-item.active .step-title {
+    color: var(--text-heading);
+    font-weight: 700;
+}
+
+/* -----------------------------------------------------------------------------
+   9. Upload Dropzone Area
+----------------------------------------------------------------------------- */
+.dropzone-box {
+    border: 2px dashed var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 28px 20px;
+    text-align: center;
+    background: var(--bg-surface-secondary);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+    cursor: pointer;
+}
+
+.dropzone-box:hover, .dropzone-box.drag-over {
+    border-color: var(--primary);
+    background: var(--primary-subtle);
+}
+
+.dropzone-icon {
+    font-size: 2rem;
+    color: var(--primary);
+    margin-bottom: 8px;
+    display: inline-block;
+}
+
+/* -----------------------------------------------------------------------------
+   10. Mic Pulsing Animation
+----------------------------------------------------------------------------- */
+.btn-mic-recording {
+    background-color: var(--danger) !important;
+    border-color: var(--danger) !important;
+    color: #ffffff !important;
+    animation: mic-pulse 1.3s infinite ease-in-out;
+}
+
+@keyframes mic-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+    70% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+
+/* -----------------------------------------------------------------------------
+   11. Timetable Grid Styling
+----------------------------------------------------------------------------- */
+.grid-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--bg-surface);
+}
+
+.timetable-grid-table {
+    border-collapse: separate;
+    border-spacing: 0;
+    width: 100%;
+    margin-bottom: 0;
+}
+
+.timetable-grid-table thead th {
+    background-color: var(--bg-surface-secondary);
+    color: var(--text-heading);
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 12px 14px;
+    border-bottom: 2px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    text-align: center;
+    white-space: nowrap;
+}
+
+.timetable-grid-table tbody th:first-child,
+.timetable-grid-table thead th:first-child {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background-color: var(--bg-surface-secondary);
+    border-right: 2px solid var(--border-color);
+    min-width: 170px;
+    max-width: 220px;
+    text-align: left;
+}
+
+.timetable-grid-table thead th:first-child {
+    z-index: 3;
+}
+
+.timetable-grid-table td {
+    padding: 8px;
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
+    min-width: 180px;
+    max-width: 230px;
+    height: 92px;
+    vertical-align: middle;
+}
+
+/* Slot Cards inside grid */
+.slot-card {
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+    border: 1px solid transparent;
+}
+
+.slot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.slot-study {
+    background-color: var(--success-subtle);
+    border-color: var(--success-border);
+    color: var(--success-text);
+}
+
+.slot-break {
+    background-color: var(--warning-subtle);
+    border-color: var(--warning-border);
+    color: var(--warning-text);
+}
+
+.slot-zoom {
+    background-color: var(--purple-subtle);
+    border-color: var(--purple-border);
+    color: var(--purple-text);
+}
+
+.slot-empty {
+    color: var(--text-disabled);
+    text-align: center;
+    font-size: 1.1rem;
+    opacity: 0.35;
+}
+
+/* -----------------------------------------------------------------------------
+   12. Toast System
+----------------------------------------------------------------------------- */
+.toast-container-corner {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1090;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.app-toast {
+    pointer-events: auto;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+    padding: 14px 18px;
+    min-width: 300px;
+    max-width: 400px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    transform: translateX(120%);
+    opacity: 0;
+    transition: transform var(--transition-normal), opacity var(--transition-normal);
+}
+
+.app-toast.show {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+/* -----------------------------------------------------------------------------
+   13. Animated Loading State Overlay
+----------------------------------------------------------------------------- */
+.ai-loading-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 2000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    color: #ffffff;
+    opacity: 0;
+    transition: opacity var(--transition-normal);
+}
+
+.ai-loading-overlay.active {
+    display: flex;
+    opacity: 1;
+}
+
+.ai-orb {
+    width: 72px;
+    height: 72px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--accent));
+    box-shadow: 0 0 35px rgba(79, 70, 229, 0.6);
+    animation: orb-spin 2s infinite ease-in-out;
+    margin-bottom: 20px;
+}
+
+@keyframes orb-spin {
+    0%, 100% { transform: scale(1) rotate(0deg); }
+    50% { transform: scale(1.15) rotate(180deg); box-shadow: 0 0 50px rgba(6, 182, 212, 0.8); }
+}
+
+/* -----------------------------------------------------------------------------
+   14. Animations & Page Transitions
+----------------------------------------------------------------------------- */
+.animate-fade-in {
+    animation: fadeIn var(--transition-slow) forwards;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Stagger list animation helper */
+.stagger-in > * {
+    animation: fadeIn var(--transition-normal) forwards;
+}
+
+/* -----------------------------------------------------------------------------
+   15. Accessibility: Reduced Motion
+----------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+    .pulse-dot, .ai-orb, .btn-mic-recording {
+        animation: none !important;
+    }
+}

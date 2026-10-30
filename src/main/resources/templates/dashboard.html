@@ -1,317 +1,332 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
-<head>
+<head th:replace="~{fragments/layout :: header('Dashboard - PrePRO AI')}">
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Input Dashboard - PREPRO AI</title>
-    <!-- CSRF Meta Tags for Secure AJAX -->
-    <meta name="_csrf" th:content="${_csrf.token}"/>
-    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
-
-    <!-- Bootstrap 5 CSS CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8fafc;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-            color: #0f172a;
-        }
-        .navbar-custom {
-            background-color: #ffffff;
-            border-bottom: 1px solid #e2e8f0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.03);
-        }
-        .card-custom {
-            background-color: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
-            margin-bottom: 24px;
-            padding: 24px;
-        }
-        .section-badge {
-            background-color: #eff6ff;
-            color: #1d4ed8;
-            font-weight: 700;
-            font-size: 0.8rem;
-            padding: 4px 10px;
-            border-radius: 6px;
-        }
-        .btn-generate {
-            background-color: #2563eb;
-            color: white;
-            font-weight: 700;
-            font-size: 1.05rem;
-            padding: 14px 28px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.35);
-            transition: all 0.2s ease;
-        }
-        .btn-generate:hover {
-            background-color: #1d4ed8;
-            color: white;
-            transform: translateY(-1px);
-        }
-        /* Voice Toolbar Styling */
-        .voice-toolbar {
-            background-color: #f1f5f9;
-            border-radius: 8px;
-            padding: 8px 12px;
-            border: 1px solid #e2e8f0;
-        }
-        .pulse-recording {
-            animation: pulse-red 1.2s infinite ease-in-out;
-        }
-        @keyframes pulse-red {
-            0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            70% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
-        }
-        /* Fullscreen Loading Overlay */
-        #loadingOverlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(15, 23, 42, 0.75);
-            backdrop-filter: blur(4px);
-            z-index: 9999;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: white;
-        }
-    </style>
+    <title>Dashboard - PrePRO AI</title>
 </head>
 <body>
 
-<!-- Navbar -->
-<nav class="navbar navbar-expand-lg navbar-custom py-3">
-    <div class="container">
-        <div class="d-flex align-items-center">
-            <span class="badge bg-primary fs-6 me-3"><i class="bi bi-cpu-fill me-1"></i> PREPRO AI</span>
-            <div>
-                <span class="fw-bold fs-5 d-block text-dark" th:text="'Welcome, ' + ${user.username}">Welcome, Student</span>
-                <span class="text-muted small" th:text="'Target: ' + ${user.examTarget}">Target: JEE Advanced</span>
-            </div>
-        </div>
-        <div class="ms-auto d-flex align-items-center gap-2">
-            <a th:if="${hasExistingTimetable}" th:href="@{/timetable}" class="btn btn-outline-primary btn-sm fw-semibold">
-                <i class="bi bi-calendar3 me-1"></i> View Saved Timetable (<span th:text="${slotCount}"></span> slots)
-            </a>
-            <a th:href="@{/logout}" class="btn btn-outline-secondary btn-sm fw-semibold">
-                <i class="bi bi-box-arrow-right me-1"></i> Logout
-            </a>
-        </div>
-    </div>
-</nav>
+<!-- Navbar Fragment -->
+<nav th:replace="~{fragments/layout :: navbar}"></nav>
 
 <!-- Main Container -->
-<div class="container py-4" style="max-width: 960px;">
+<main class="container py-4 py-lg-5 animate-fade-in" style="max-width: 1040px;">
 
-    <!-- Error Alert -->
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-        <i class="bi bi-exclamation-triangle-fill me-2"></i> <span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    <!-- Greeting & Quick Action Hero -->
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+        <div>
+            <div class="d-flex align-items-center gap-2 mb-1">
+                <h2 class="fw-bold mb-0" th:text="'Hello, ' + ${user.username}">Hello, Student</h2>
+                <span class="badge-soft badge-soft-primary" th:text="${user.examTarget}">JEE Advanced</span>
+            </div>
+            <p class="text-muted small mb-0">Your personalized study plan and cognitive pacing assistant.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <a th:if="${hasExistingTimetable}" th:href="@{/timetable}" class="btn btn-primary">
+                <i class="bi bi-calendar3 me-1"></i> View Master Schedule
+            </a>
+            <a href="#creatorSection" class="btn btn-secondary">
+                <i class="bi bi-magic me-1"></i> Create New Plan
+            </a>
+        </div>
     </div>
 
-    <form id="timetableForm" th:action="@{/generate}" method="post" enctype="multipart/form-data">
-
-        <!-- 1. Subjects, Topics & Proficiency -->
-        <div class="card-custom">
-            <div class="d-flex align-items-center justify-content-between mb-3">
+    <!-- 3 Summary Overview Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Card 1: Active Master Timetable Status -->
+        <div class="col-md-4">
+            <div class="stat-card app-card-interactive h-100">
+                <div class="stat-icon bg-primary-subtle text-primary">
+                    <i class="bi bi-calendar2-check-fill"></i>
+                </div>
                 <div>
-                    <h5 class="fw-bold mb-1"><i class="bi bi-book-half text-primary me-2"></i> 1. Subjects &amp; Proficiency Levels</h5>
-                    <p class="text-muted small mb-0">
-                        <strong>AI Priority Rule:</strong> ~50% study time is given to <code>POOR</code> subjects, ~30% to <code>AVERAGE</code>, and ~20% to <code>GOOD</code>.
-                    </p>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Master Timetable</div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:if="${hasExistingTimetable}" th:text="${slotCount} + ' Slots'">24 Slots</span>
+                        <span th:if="${!hasExistingTimetable}" class="fs-6 text-muted">No Plan Generated</span>
+                    </div>
+                    <small class="text-success fw-semibold" th:if="${hasExistingTimetable}">
+                        <i class="bi bi-check2-circle me-1"></i>Active &amp; Balanced
+                    </small>
+                    <small class="text-muted" th:if="${!hasExistingTimetable}">
+                        Ready to create your first plan
+                    </small>
                 </div>
             </div>
-
-            <div id="subjectRowsContainer">
-                <!-- Subject Row 1 -->
-                <div class="row g-2 align-items-center mb-2 subject-row">
-                    <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Physics, History)" required>
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters (comma-separated)">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="proficiency" class="form-select">
-                            <option value="POOR">POOR (Weak - 50% Time)</option>
-                            <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
-                            <option value="GOOD">GOOD (Comfortable - 20%)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
-                    </div>
-                </div>
-
-                <!-- Subject Row 2 -->
-                <div class="row g-2 align-items-center mb-2 subject-row">
-                    <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Chemistry, Polity)">
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="proficiency" class="form-select">
-                            <option value="POOR">POOR (Weak - 50% Time)</option>
-                            <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
-                            <option value="GOOD">GOOD (Comfortable - 20%)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
-                    </div>
-                </div>
-
-                <!-- Subject Row 3 -->
-                <div class="row g-2 align-items-center mb-2 subject-row">
-                    <div class="col-md-3">
-                        <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Mathematics, Biology)">
-                    </div>
-                    <div class="col-md-5">
-                        <input type="text" name="topics" class="form-control" placeholder="Key Topics / Chapters">
-                    </div>
-                    <div class="col-md-3">
-                        <select name="proficiency" class="form-select">
-                            <option value="POOR" selected>POOR (Weak - 50% Time)</option>
-                            <option value="AVERAGE">AVERAGE (Moderate - 30%)</option>
-                            <option value="GOOD">GOOD (Comfortable - 20%)</option>
-                        </select>
-                    </div>
-                    <div class="col-md-1 text-center">
-                        <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
-                    </div>
-                </div>
-            </div>
-
-            <button type="button" class="btn btn-light text-primary fw-semibold btn-sm mt-2" onclick="addSubjectRow()">
-                <i class="bi bi-plus-circle me-1"></i> Add Another Subject
-            </button>
         </div>
 
-        <!-- 2. Syllabus PDF Upload -->
-        <div class="card-custom">
-            <h5 class="fw-bold mb-1"><i class="bi bi-file-earmark-pdf-fill text-danger me-2"></i> 2. Syllabus PDF Document (Optional)</h5>
-            <p class="text-muted small mb-3">Upload your coaching or exam syllabus PDF. Apache PDFBox extracts chapters and helps the AI align coverage.</p>
-            <input type="file" name="pdfFile" class="form-control" accept=".pdf">
+        <!-- Card 2: Cognitive Psychology Pacing -->
+        <div class="col-md-4">
+            <div class="stat-card app-card-interactive h-100">
+                <div class="stat-icon bg-success-subtle text-success">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Focus Cadence</div>
+                    <div class="fs-4 fw-bold text-heading">30m / 10m</div>
+                    <small class="text-muted">
+                        30m Deep Work &bull; 10m Brain Reset
+                    </small>
+                </div>
+            </div>
         </div>
 
-        <!-- 3. Study Windows, Recurring Zoom & Voice-to-Text Input -->
-        <div class="card-custom">
-            <div class="d-flex flex-wrap align-items-center justify-content-between mb-2">
+        <!-- Card 3: Priority Balancing System -->
+        <div class="col-md-4">
+            <div class="stat-card app-card-interactive h-100">
+                <div class="stat-icon bg-purple-subtle text-purple">
+                    <i class="bi bi-pie-chart-fill"></i>
+                </div>
                 <div>
-                    <h5 class="fw-bold mb-1">
-                        <i class="bi bi-clock-history text-success me-2"></i> 3. Study Hours, Notes &amp; Voice Input
-                    </h5>
-                    <p class="text-muted small mb-0">
-                        Type or speak your available study hours, rest preferences, and recurring Zoom class links.
-                    </p>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Weight Allocation</div>
+                    <div class="fs-4 fw-bold text-heading">50 / 30 / 20</div>
+                    <small class="text-muted">
+                        50% Weak &bull; 30% Avg &bull; 20% Revision
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Creator Section Anchor -->
+    <div id="creatorSection" class="pt-2">
+
+        <!-- Timetable Creation Form -->
+        <form id="timetableForm" th:action="@{/generate}" method="post" enctype="multipart/form-data">
+
+            <!-- 3-Step Progress Indicator -->
+            <div class="stepper-wrapper mb-4">
+                <div class="step-item active" id="stepIndicator1">
+                    <div class="step-circle">1</div>
+                    <div class="step-title">Subjects &amp; Topics</div>
+                </div>
+                <div class="step-item" id="stepIndicator2">
+                    <div class="step-circle">2</div>
+                    <div class="step-title">Syllabus &amp; Voice</div>
+                </div>
+                <div class="step-item" id="stepIndicator3">
+                    <div class="step-circle">3</div>
+                    <div class="step-title">Preferences &amp; Generate</div>
                 </div>
             </div>
 
-            <!-- Voice-to-Text Toolbar -->
-            <div class="voice-toolbar d-flex flex-wrap align-items-center justify-content-between gap-2 mb-2">
-                <div class="d-flex align-items-center gap-2">
-                    <!-- Live Voice Dictation Button -->
-                    <button type="button" id="voiceDictateBtn" class="btn btn-sm btn-primary fw-semibold" onclick="toggleVoiceDictation()">
-                        <i class="bi bi-mic-fill me-1"></i> <span id="dictateBtnText">Speak (Voice to Text)</span>
-                    </button>
-
-                    <!-- Listening Live Badge -->
-                    <span id="voiceListeningBadge" class="badge bg-danger text-white small d-none pulse-recording">
-                        <i class="bi bi-record-circle-fill me-1"></i> Listening... Speak now
-                    </span>
-
-                    <!-- Voice Processing Spinner -->
-                    <span id="voiceProcessingBadge" class="badge bg-warning text-dark small d-none">
-                        <span class="spinner-border spinner-border-sm me-1" role="status"></span> Transcribing with AI...
-                    </span>
+            <!-- STEP 1: Subjects & Proficiency Levels -->
+            <div class="app-card mb-4" id="stepSection1">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+                    <div>
+                        <span class="badge-soft badge-soft-primary mb-1">Step 1 of 3</span>
+                        <h5 class="fw-bold mb-0">Define Subjects &amp; Knowledge Levels</h5>
+                    </div>
+                    <span class="text-muted small">AI dedicates ~50% time to POOR subjects.</span>
                 </div>
 
-                <div class="d-flex align-items-center gap-2">
-                    <!-- Attach Voice Clip Button -->
-                    <label class="btn btn-sm btn-outline-secondary fw-semibold mb-0 cursor-pointer" for="voiceFileInput" title="Upload audio recording to transcribe via Gemini AI">
-                        <i class="bi bi-file-earmark-music-fill me-1"></i> Attach Audio File
-                    </label>
-                    <input type="file" id="voiceFileInput" name="voiceFile" class="d-none" accept="audio/*,.wav,.mp3,.m4a,.ogg,.webm" onchange="handleVoiceFileSelected(this)">
+                <div id="subjectRowsContainer">
+                    <!-- Dynamic Subject Row 1 -->
+                    <div class="row g-2 align-items-center mb-2 subject-row">
+                        <div class="col-md-3">
+                            <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Physics)" required>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="topics" class="form-control" placeholder="Key Chapters / Topics (comma-separated)">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="proficiency" class="form-select">
+                                <option value="POOR">POOR (Weak - 50% Time)</option>
+                                <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
+                                <option value="GOOD">GOOD (Revision - 20%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <button type="button" class="btn btn-ghost text-danger btn-sm w-100" onclick="removeRow(this)" title="Remove row">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
 
-                    <span id="voiceFileNameBadge" class="badge bg-white text-dark border small d-none"></span>
+                    <!-- Dynamic Subject Row 2 -->
+                    <div class="row g-2 align-items-center mb-2 subject-row">
+                        <div class="col-md-3">
+                            <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Chemistry)">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="topics" class="form-control" placeholder="Key Chapters / Topics">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="proficiency" class="form-select">
+                                <option value="POOR">POOR (Weak - 50% Time)</option>
+                                <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
+                                <option value="GOOD">GOOD (Revision - 20%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <button type="button" class="btn btn-ghost text-danger btn-sm w-100" onclick="removeRow(this)" title="Remove row">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
 
-                    <!-- Transcribe Audio Button -->
-                    <button type="button" id="transcribeAudioBtn" class="btn btn-sm btn-success d-none fw-semibold" onclick="transcribeSelectedAudioFile()">
-                        <i class="bi bi-stars me-1"></i> Transcribe Audio to Text
-                    </button>
+                    <!-- Dynamic Subject Row 3 -->
+                    <div class="row g-2 align-items-center mb-2 subject-row">
+                        <div class="col-md-3">
+                            <input type="text" name="subjectName" class="form-control" placeholder="Subject (e.g. Mathematics)">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" name="topics" class="form-control" placeholder="Key Chapters / Topics">
+                        </div>
+                        <div class="col-md-3">
+                            <select name="proficiency" class="form-select">
+                                <option value="POOR" selected>POOR (Weak - 50% Time)</option>
+                                <option value="AVERAGE">AVERAGE (Moderate - 30%)</option>
+                                <option value="GOOD">GOOD (Revision - 20%)</option>
+                            </select>
+                        </div>
+                        <div class="col-md-1 text-center">
+                            <button type="button" class="btn btn-ghost text-danger btn-sm w-100" onclick="removeRow(this)" title="Remove row">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <textarea id="extraInstructions" name="extraInstructions" class="form-control" rows="4" placeholder="Speak or type your study window, e.g.: 'Study window: 4:00 PM to 8:00 PM on weekdays. Zoom class every Monday at 5:00 PM (https://zoom.us/j/99999)'.">I study from 4:00 PM (16:00) to 8:00 PM (20:00) on weekdays (Monday through Friday). Do not schedule sessions outside this window or on weekends.
-I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: https://zoom.us/j/99999. Please mark it as ZOOM_MEETING.</textarea>
-
-            <div class="d-flex align-items-center justify-content-between mt-1">
-                <small class="text-muted">
-                    <i class="bi bi-info-circle me-1"></i>
-                    <strong>Voice Tip:</strong> Click <strong>"Speak (Voice to Text)"</strong> to dictate in real-time, or attach an audio note to transcribe via Gemini Multimodal.
-                </small>
-                <button type="button" class="btn btn-link btn-sm text-secondary text-decoration-none p-0" onclick="clearInstructions()">
-                    <i class="bi bi-eraser me-1"></i> Clear text
+                <button type="button" class="btn btn-ghost text-primary btn-sm mt-2" onclick="addSubjectRow()">
+                    <i class="bi bi-plus-circle me-1"></i> Add Another Subject
                 </button>
             </div>
-        </div>
 
-        <!-- Submit Button -->
-        <div class="text-center my-4">
-            <button type="submit" class="btn btn-generate px-5 py-3">
-                <i class="bi bi-stars me-2"></i> Generate AI Personalized Timetable
-            </button>
-            <p class="text-muted small mt-2">Takes ~15-25 seconds to generate strict 30-min pacing blocks &amp; breaks via Gemini AI Brain.</p>
-        </div>
+            <!-- STEP 2: Drag & Drop Syllabus & Voice Notes -->
+            <div class="app-card mb-4" id="stepSection2">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+                    <div>
+                        <span class="badge-soft badge-soft-primary mb-1">Step 2 of 3</span>
+                        <h5 class="fw-bold mb-0">Syllabus PDF &amp; Voice Input (Optional)</h5>
+                    </div>
+                    <span class="text-muted small">Upload or speak notes directly to Gemini.</span>
+                </div>
 
-    </form>
-</div>
+                <div class="row g-3">
+                    <!-- Left: Drag-and-Drop PDF Upload Area -->
+                    <div class="col-lg-6">
+                        <label class="form-label">Coaching or Exam Syllabus PDF</label>
+                        <div class="dropzone-box" id="pdfDropzone">
+                            <div class="dropzone-icon text-danger">
+                                <i class="bi bi-file-earmark-pdf-fill"></i>
+                            </div>
+                            <div class="fw-semibold text-heading small">Drag &amp; drop your syllabus PDF here</div>
+                            <div class="text-muted" style="font-size: 0.78rem;">or click to browse from device</div>
+                            <span id="pdfFileNameBadge" class="badge-soft badge-soft-primary mt-2 d-none"></span>
+                        </div>
+                        <input type="file" id="pdfFileInput" name="pdfFile" class="d-none" accept=".pdf">
+                    </div>
 
-<!-- Fullscreen Loading Overlay -->
-<div id="loadingOverlay">
-    <div class="spinner-border text-light mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-    <h4 class="fw-bold">Connecting to Gemini AI Brain...</h4>
-    <p class="text-light-50">Applying 30-minute psychological pacing, breaks, and priority weighting...</p>
-</div>
+                    <!-- Right: Live Mic Dictation & Audio Note Upload -->
+                    <div class="col-lg-6">
+                        <label class="form-label">Voice Recording &amp; Audio Input</label>
+                        <div class="app-card p-3 bg-surface-secondary border" style="min-height: 140px;">
+                            <div class="d-flex flex-wrap align-items-center gap-2 mb-2">
+                                <!-- Mic Button with Pulse -->
+                                <button type="button" id="voiceDictateBtn" class="btn btn-sm btn-outline-primary" onclick="toggleVoiceDictation()">
+                                    <i class="bi bi-mic-fill"></i>
+                                    <span id="dictateBtnText">Speak (Voice to Text)</span>
+                                </button>
 
-<!-- Bootstrap 5 JS -->
+                                <span id="voiceListeningBadge" class="badge-soft badge-soft-danger d-none">
+                                    <span class="pulse-dot bg-danger"></span> Listening live...
+                                </span>
+
+                                <span id="voiceProcessingBadge" class="badge-soft badge-soft-warning d-none">
+                                    <span class="spinner-border spinner-border-sm me-1" role="status"></span> Transcribing...
+                                </span>
+                            </div>
+
+                            <div class="d-flex align-items-center gap-2 mt-2 pt-2 border-top" style="border-color: var(--border-color) !important;">
+                                <label class="btn btn-ghost btn-sm mb-0 cursor-pointer" for="voiceFileInput" title="Upload an audio file">
+                                    <i class="bi bi-paperclip me-1"></i> Attach Audio File
+                                </label>
+                                <input type="file" id="voiceFileInput" name="voiceFile" class="d-none" accept="audio/*,.wav,.mp3,.m4a,.ogg,.webm" onchange="handleVoiceFileSelected(this)">
+
+                                <span id="voiceFileNameBadge" class="badge-soft badge-soft-purple d-none"></span>
+
+                                <button type="button" id="transcribeAudioBtn" class="btn btn-sm btn-success d-none" onclick="transcribeSelectedAudioFile()">
+                                    <i class="bi bi-stars me-1"></i> Transcribe
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: Study Hours, Zoom Classes & Generation -->
+            <div class="app-card mb-4" id="stepSection3">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3 pb-2 border-bottom" style="border-color: var(--border-color) !important;">
+                    <div>
+                        <span class="badge-soft badge-soft-primary mb-1">Step 3 of 3</span>
+                        <h5 class="fw-bold mb-0">Study Window &amp; Zoom Meeting Instructions</h5>
+                    </div>
+                    <span class="text-muted small">Specify available hours and online meetings.</span>
+                </div>
+
+                <div class="mb-3">
+                    <label for="extraInstructions" class="form-label">Study Constraints &amp; Meeting URLs</label>
+                    <textarea id="extraInstructions" name="extraInstructions" class="form-control" rows="4" placeholder="e.g. Study window: 4:00 PM to 8:00 PM on weekdays. Recurring Zoom lecture every Monday at 5:00 PM (https://zoom.us/j/99999).">I study from 4:00 PM (16:00) to 8:00 PM (20:00) on weekdays (Monday through Friday). Do not schedule sessions outside this window or on weekends.
+I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: https://zoom.us/j/99999. Please mark it as ZOOM_MEETING.</textarea>
+                    <div class="d-flex justify-content-between align-items-center mt-2">
+                        <span class="text-muted small"><i class="bi bi-info-circle me-1"></i>PrePRO AI automatically validates 30-min study blocks and 10-min cognitive rest breaks.</span>
+                        <button type="button" class="btn btn-ghost btn-sm text-secondary p-0" onclick="document.getElementById('extraInstructions').value = ''">
+                            <i class="bi bi-eraser me-1"></i> Clear text
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Primary Action Button -->
+                <div class="text-center pt-3 border-top" style="border-color: var(--border-color) !important;">
+                    <button type="submit" class="btn btn-primary py-3 px-5 fs-6 shadow-sm">
+                        <i class="bi bi-stars fs-5 me-1"></i> Generate AI Master Timetable
+                    </button>
+                    <div class="text-muted small mt-2">Takes approximately 15–20 seconds to construct your optimized schedule.</div>
+                </div>
+            </div>
+
+        </form>
+
+    </div>
+
+</main>
+
+<!-- Footer Fragment -->
+<footer th:replace="~{fragments/layout :: footer}"></footer>
+
+<!-- Toast Container Fragment -->
+<div th:replace="~{fragments/layout :: toast-container}"></div>
+
+<!-- AI Loading State Overlay Fragment -->
+<div th:replace="~{fragments/layout :: ai-loading}"></div>
+
+<!-- Bootstrap 5 JS Bundle CDN -->
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Script Logic: Dynamic Rows, Voice Dictation, Drag & Drop, Loading Hook -->
 <script>
-    // ──────────────────────────────────────────────────────────────────────────
-    // Subject Dynamic Rows
-    // ──────────────────────────────────────────────────────────────────────────
+    // 1. Dynamic Subject Rows
     function addSubjectRow() {
         const container = document.getElementById('subjectRowsContainer');
         const row = document.createElement('div');
-        row.className = 'row g-2 align-items-center mb-2 subject-row';
+        row.className = 'row g-2 align-items-center mb-2 subject-row animate-fade-in';
         row.innerHTML = `
             <div class="col-md-3">
                 <input type="text" name="subjectName" class="form-control" placeholder="Subject Name" required>
             </div>
             <div class="col-md-5">
-                <input type="text" name="topics" class="form-control" placeholder="Topics / Chapters">
+                <input type="text" name="topics" class="form-control" placeholder="Key Chapters / Topics">
             </div>
             <div class="col-md-3">
                 <select name="proficiency" class="form-select">
                     <option value="POOR">POOR (Weak - 50% Time)</option>
                     <option value="AVERAGE" selected>AVERAGE (Moderate - 30%)</option>
-                    <option value="GOOD">GOOD (Comfortable - 20%)</option>
+                    <option value="GOOD">GOOD (Revision - 20%)</option>
                 </select>
             </div>
             <div class="col-md-1 text-center">
-                <button type="button" class="btn btn-outline-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash"></i></button>
+                <button type="button" class="btn btn-ghost text-danger btn-sm w-100" onclick="removeRow(this)"><i class="bi bi-trash3"></i></button>
             </div>
         `;
         container.appendChild(row);
@@ -322,69 +337,62 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
         if (rows.length > 1) {
             btn.closest('.subject-row').remove();
         } else {
-            alert('At least one subject is required.');
+            showToast('At least one subject is required.', 'warning');
         }
     }
 
-    function clearInstructions() {
-        document.getElementById('extraInstructions').value = '';
-    }
+    // 2. Drag & Drop PDF
+    document.addEventListener('DOMContentLoaded', function () {
+        const dropzone = document.getElementById('pdfDropzone');
+        const fileInput = document.getElementById('pdfFileInput');
+        const labelBadge = document.getElementById('pdfFileNameBadge');
+        if (window.initDropzone) {
+            window.initDropzone(dropzone, fileInput, labelBadge);
+        }
+    });
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Voice to Text (Web Speech API + Gemini Multimodal Fallback)
-    // ──────────────────────────────────────────────────────────────────────────
+    // 3. Web Speech Recognition (Mic Pulsing)
     let speechRecognizer = null;
     let isDictating = false;
 
     function initSpeechRecognition() {
         const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-        if (!SpeechRec) {
-            return null;
-        }
+        if (!SpeechRec) return null;
         const recognizer = new SpeechRec();
         recognizer.continuous = true;
         recognizer.interimResults = true;
         recognizer.lang = 'en-US';
 
-        recognizer.onstart = function() {
+        recognizer.onstart = function () {
             isDictating = true;
             document.getElementById('voiceListeningBadge').classList.remove('d-none');
-            document.getElementById('voiceDictateBtn').className = 'btn btn-sm btn-danger fw-semibold';
-            document.getElementById('dictateBtnText').innerText = 'Stop Listening';
+            const btn = document.getElementById('voiceDictateBtn');
+            btn.className = 'btn btn-sm btn-mic-recording';
+            document.getElementById('dictateBtnText').innerText = 'Stop Dictating';
         };
 
-        recognizer.onresult = function(event) {
-            let finalChunk = '';
+        recognizer.onresult = function (event) {
+            let chunk = '';
             for (let i = event.resultIndex; i < event.results.length; ++i) {
                 if (event.results[i].isFinal) {
-                    finalChunk += event.results[i][0].transcript + ' ';
+                    chunk += event.results[i][0].transcript + ' ';
                 }
             }
-            if (finalChunk.trim()) {
+            if (chunk.trim()) {
                 const textarea = document.getElementById('extraInstructions');
-                textarea.value = textarea.value.trim() ? textarea.value.trim() + ' ' + finalChunk.trim() : finalChunk.trim();
+                textarea.value = textarea.value.trim() ? textarea.value.trim() + ' ' + chunk.trim() : chunk.trim();
             }
         };
 
-        recognizer.onerror = function(event) {
-            console.warn('Speech recognition error:', event.error);
-            stopDictationUI();
-        };
-
-        recognizer.onend = function() {
-            stopDictationUI();
-        };
-
+        recognizer.onerror = () => stopDictationUI();
+        recognizer.onend = () => stopDictationUI();
         return recognizer;
     }
 
     function toggleVoiceDictation() {
+        if (!speechRecognizer) speechRecognizer = initSpeechRecognition();
         if (!speechRecognizer) {
-            speechRecognizer = initSpeechRecognition();
-        }
-
-        if (!speechRecognizer) {
-            alert('Speech Recognition is not supported by your browser. You can still attach an audio file to transcribe with Gemini AI!');
+            showToast('Speech Recognition not supported in this browser. You can still attach audio files!', 'warning');
             return;
         }
 
@@ -395,7 +403,6 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
             try {
                 speechRecognizer.start();
             } catch (e) {
-                console.error(e);
                 stopDictationUI();
             }
         }
@@ -404,13 +411,12 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
     function stopDictationUI() {
         isDictating = false;
         document.getElementById('voiceListeningBadge').classList.add('d-none');
-        document.getElementById('voiceDictateBtn').className = 'btn btn-sm btn-primary fw-semibold';
+        const btn = document.getElementById('voiceDictateBtn');
+        btn.className = 'btn btn-sm btn-outline-primary';
         document.getElementById('dictateBtnText').innerText = 'Speak (Voice to Text)';
     }
 
-    // ──────────────────────────────────────────────────────────────────────────
-    // Audio File Upload & Gemini Multimodal AI Transcription
-    // ──────────────────────────────────────────────────────────────────────────
+    // 4. Voice File Selection & AI Transcription
     function handleVoiceFileSelected(input) {
         if (input.files && input.files[0]) {
             const file = input.files[0];
@@ -424,15 +430,13 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
     function transcribeSelectedAudioFile() {
         const fileInput = document.getElementById('voiceFileInput');
         if (!fileInput.files || !fileInput.files[0]) {
-            alert('Please select an audio file first.');
+            showToast('Please select an audio file first.', 'warning');
             return;
         }
 
-        const file = fileInput.files[0];
         const formData = new FormData();
-        formData.append('audio', file);
+        formData.append('audio', fileInput.files[0]);
 
-        // Retrieve CSRF token
         const tokenMeta = document.querySelector('meta[name="_csrf"]');
         const headerMeta = document.querySelector('meta[name="_csrf_header"]');
         const headers = {};
@@ -440,7 +444,6 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
             headers[headerMeta.getAttribute('content')] = tokenMeta.getAttribute('content');
         }
 
-        // Show transcribing spinner
         document.getElementById('voiceProcessingBadge').classList.remove('d-none');
         document.getElementById('transcribeAudioBtn').disabled = true;
 
@@ -449,36 +452,39 @@ I have a recurring Zoom meeting every Monday at 5:00 PM (17:00). Meeting link: h
             headers: headers,
             body: formData
         })
-        .then(response => response.json())
+        .then(res => res.json())
         .then(data => {
             document.getElementById('voiceProcessingBadge').classList.add('d-none');
             document.getElementById('transcribeAudioBtn').disabled = false;
-
             if (data.success && data.transcript) {
-                const textarea = document.getElementById('extraInstructions');
-                textarea.value = textarea.value.trim() 
-                    ? textarea.value.trim() + '\n\n[Voice Transcript]: ' + data.transcript
-                    : '[Voice Transcript]: ' + data.transcript;
-                alert('Audio transcribed successfully! Spoken words have been added to your instructions.');
+                const ta = document.getElementById('extraInstructions');
+                ta.value = ta.value.trim() ? ta.value.trim() + '\n\n' + data.transcript : data.transcript;
+                showToast('Voice transcribed successfully and appended to your instructions!', 'success');
             } else {
-                alert(data.error || 'Transcription failed. Please check audio or speak clearly.');
+                showToast(data.error || 'Audio transcription returned empty.', 'error');
             }
         })
         .catch(err => {
             document.getElementById('voiceProcessingBadge').classList.add('d-none');
             document.getElementById('transcribeAudioBtn').disabled = false;
-            console.error(err);
-            alert('Error communicating with the transcription service: ' + err.message);
+            showToast('Transcription service error: ' + err.message, 'error');
         });
     }
 
-    // Show loading overlay on form submission
-    document.getElementById('timetableForm').addEventListener('submit', function() {
-        if (isDictating && speechRecognizer) {
-            speechRecognizer.stop();
+    // 5. Form Submit Hook for AI Animated Loading Screen
+    document.getElementById('timetableForm').addEventListener('submit', function () {
+        if (isDictating && speechRecognizer) speechRecognizer.stop();
+        if (window.showAILoading) {
+            window.showAILoading([
+                'Extracting subjects and priority weightings...',
+                'Reading your syllabus and chapters...',
+                'Applying 30-minute psychological pacing...',
+                'Generating smart break intervals and Zoom links...',
+                'Persisting your master study plan...'
+            ]);
         }
-        document.getElementById('loadingOverlay').style.display = 'flex';
     });
 </script>
+
 </body>
 </html>
