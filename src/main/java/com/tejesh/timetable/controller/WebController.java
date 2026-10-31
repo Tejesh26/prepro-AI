@@ -359,7 +359,17 @@ public class WebController {
             matrix.put(subjectRow, colMap);
         }
 
-        // Statistics
+        // Day-specific Statistics (Active Day)
+        long dayStudyCount = daySlots.stream().filter(s -> s.getSlotType() == SlotType.STUDY).count();
+        long dayBreakCount = daySlots.stream().filter(s -> s.getSlotType() == SlotType.BREAK).count();
+        long dayZoomCount  = daySlots.stream().filter(s -> s.getSlotType() == SlotType.ZOOM_MEETING).count();
+        long dayMealCount  = daySlots.stream().filter(s -> s.getSlotType() != null && s.getSlotType().isMeal()).count();
+        double dayStudyHours = dayStudyCount * 0.5; // each study block is 30m = 0.5h
+        String formattedStudyHours = (dayStudyHours == (long) dayStudyHours)
+                ? String.format("%d hrs", (long) dayStudyHours)
+                : String.format("%.1f hrs", dayStudyHours);
+
+        // Weekly Statistics (All 7 Days)
         long studyCount = allSlots.stream().filter(s -> s.getSlotType() == SlotType.STUDY).count();
         long breakCount = allSlots.stream().filter(s -> s.getSlotType() == SlotType.BREAK).count();
         long zoomCount  = allSlots.stream().filter(s -> s.getSlotType() == SlotType.ZOOM_MEETING).count();
@@ -372,6 +382,16 @@ public class WebController {
         model.addAttribute("activeDay", activeDay);
         model.addAttribute("timeSlots", timeSlots);
         model.addAttribute("matrix", matrix);
+
+        // Day attributes (reflecting active day's timetable)
+        model.addAttribute("dayTotalCount", daySlots.size());
+        model.addAttribute("dayStudyCount", dayStudyCount);
+        model.addAttribute("dayBreakCount", dayBreakCount);
+        model.addAttribute("dayZoomCount", dayZoomCount);
+        model.addAttribute("dayMealCount", dayMealCount);
+        model.addAttribute("dayStudyHours", formattedStudyHours);
+
+        // Weekly attributes
         model.addAttribute("studyCount", studyCount);
         model.addAttribute("breakCount", breakCount);
         model.addAttribute("zoomCount", zoomCount);

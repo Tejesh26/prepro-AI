@@ -45,19 +45,28 @@
         </div>
     </div>
 
-    <!-- 5 Summary Stats Cards -->
+    <!-- 5 Summary Stats Cards (Reflecting Selected Day's Schedule + 7-Day Plan Totals) -->
     <div class="row g-3 mb-4">
+        <!-- Card 1: Day Total Slots -->
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-primary-subtle text-primary">
-                    <i class="bi bi-calendar2-week-fill"></i>
+                    <i class="bi bi-calendar2-day-fill"></i>
                 </div>
                 <div>
-                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Total Slots</div>
-                    <div class="fs-4 fw-bold text-heading" th:text="${allSlots.size()}">0</div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">
+                        <span th:text="${activeDay}">Monday</span> Sessions
+                    </div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:text="${dayTotalCount}">29</span>
+                        <span class="fs-6 fw-normal text-muted">slots</span>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;" th:text="${allSlots.size() + ' total / week'}">203 total / week</small>
                 </div>
             </div>
         </div>
+
+        <!-- Card 2: Day Focus Study Blocks -->
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-success-subtle text-success">
@@ -65,32 +74,50 @@
                 </div>
                 <div>
                     <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Study Blocks (30m)</div>
-                    <div class="fs-4 fw-bold text-heading" th:text="${studyCount}">0</div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:text="${dayStudyCount}">15</span>
+                        <span class="fs-6 fw-normal text-muted" th:text="'(' + ${dayStudyHours} + ')'">(7.5 hrs)</span>
+                    </div>
+                    <small class="text-success fw-semibold" style="font-size: 0.72rem;" th:text="${studyCount + ' blocks / week'}">105 blocks / week</small>
                 </div>
             </div>
         </div>
+
+        <!-- Card 3: Cognitive Breaks Today -->
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-warning-subtle text-warning">
                     <i class="bi bi-cup-hot-fill"></i>
                 </div>
                 <div>
-                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Cognitive Breaks</div>
-                    <div class="fs-4 fw-bold text-heading" th:text="${breakCount}">0</div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Brain Breaks (10m)</div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:text="${dayBreakCount}">11</span>
+                        <span class="fs-6 fw-normal text-muted">rests</span>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;" th:text="${breakCount + ' total / week'}">77 total / week</small>
                 </div>
             </div>
         </div>
+
+        <!-- Card 4: Meal Breaks Today -->
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-warning-subtle text-warning">
                     <i class="bi bi-egg-fried"></i>
                 </div>
                 <div>
-                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Meal Breaks</div>
-                    <div class="fs-4 fw-bold text-heading" th:text="${mealCount}">0</div>
+                    <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Meals &amp; Snacks</div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:text="${dayMealCount}">3</span>
+                        <span class="fs-6 fw-normal text-muted">meals</span>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;" th:text="${mealCount + ' total / week (3/day)'}">21 total / week</small>
                 </div>
             </div>
         </div>
+
+        <!-- Card 5: Zoom Lectures Today -->
         <div class="col-6 col-md-4 col-xl">
             <div class="stat-card">
                 <div class="stat-icon bg-purple-subtle text-purple">
@@ -98,7 +125,11 @@
                 </div>
                 <div>
                     <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.7rem; letter-spacing: 0.5px;">Zoom Lectures</div>
-                    <div class="fs-4 fw-bold text-heading" th:text="${zoomCount}">0</div>
+                    <div class="fs-4 fw-bold text-heading">
+                        <span th:text="${dayZoomCount}">0</span>
+                        <span class="fs-6 fw-normal text-muted">classes</span>
+                    </div>
+                    <small class="text-muted" style="font-size: 0.72rem;" th:text="${zoomCount + ' scheduled / week'}">0 scheduled / week</small>
                 </div>
             </div>
         </div>

@@ -42,11 +42,11 @@
                 <div>
                     <div class="text-muted small fw-semibold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">Master Timetable</div>
                     <div class="fs-4 fw-bold text-heading">
-                        <span th:if="${hasExistingTimetable}" th:text="${slotCount} + ' Slots'">24 Slots</span>
+                        <span th:if="${hasExistingTimetable}" th:text="${slotCount} + ' Weekly Slots'">203 Weekly Slots</span>
                         <span th:if="${!hasExistingTimetable}" class="fs-6 text-muted">No Plan Generated</span>
                     </div>
                     <small class="text-success fw-semibold" th:if="${hasExistingTimetable}">
-                        <i class="bi bi-check2-circle me-1"></i>Active &amp; Balanced
+                        <i class="bi bi-check2-circle me-1"></i>Active 7-Day Plan (~29 sessions/day)
                     </small>
                     <small class="text-muted" th:if="${!hasExistingTimetable}">
                         Ready to create your first plan
