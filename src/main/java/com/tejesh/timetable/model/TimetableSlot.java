@@ -13,6 +13,10 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
+import java.time.Duration;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -168,6 +172,83 @@ public class TimetableSlot {
 
     public User getUser() { return user; }
     public void setUser(User user) { this.user = user; }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 12-Hour Time Format & Cognitive Duration Helpers
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static final DateTimeFormatter TIME_12_FORMATTER = DateTimeFormatter.ofPattern("h:mm a", Locale.ENGLISH);
+
+    /**
+     * Converts a 24-hour time string ("HH:mm", e.g. "13:00") into 12-hour AM/PM format ("1:00 PM").
+     */
+    public static String format12Hour(String timeStr) {
+        if (timeStr == null || timeStr.isBlank()) return "";
+        try {
+            LocalTime lt = LocalTime.parse(timeStr.trim());
+            return lt.format(TIME_12_FORMATTER);
+        } catch (Exception e) {
+            try {
+                String[] parts = timeStr.trim().split(":");
+                if (parts.length >= 2) {
+                    int h = Integer.parseInt(parts[0]);
+                    int m = Integer.parseInt(parts[1]);
+                    return LocalTime.of(h, m).format(TIME_12_FORMATTER);
+                }
+            } catch (Exception ignored) {}
+            return timeStr;
+        }
+    }
+
+    /**
+     * Converts a 24-hour time range string ("HH:mm - HH:mm", e.g. "13:00 - 14:00")
+     * into 12-hour AM/PM format ("1:00 PM – 2:00 PM").
+     */
+    public static String formatTimeRange12(String rangeStr) {
+        if (rangeStr == null || rangeStr.isBlank()) return "";
+        String[] parts = rangeStr.split("\\s*(?:-|–|to)\\s*");
+        if (parts.length == 2) {
+            return format12Hour(parts[0]) + " – " + format12Hour(parts[1]);
+        }
+        return format12Hour(rangeStr);
+    }
+
+    /**
+     * Returns start time formatted in 12-hour AM/PM format (e.g. "9:00 AM", "1:00 PM").
+     */
+    public String getFormattedStartTime12() {
+        return format12Hour(this.startTime);
+    }
+
+    /**
+     * Returns end time formatted in 12-hour AM/PM format (e.g. "9:30 AM", "2:00 PM").
+     */
+    public String getFormattedEndTime12() {
+        return format12Hour(this.endTime);
+    }
+
+    /**
+     * Returns time range formatted in 12-hour AM/PM format (e.g. "1:00 PM – 2:00 PM").
+     */
+    public String getFormattedTimeRange12() {
+        return format12Hour(this.startTime) + " – " + format12Hour(this.endTime);
+    }
+
+    /**
+     * Returns the slot duration in minutes (e.g. 15, 30, 45, 60).
+     */
+    public int getDurationMinutes() {
+        if (this.startTime == null || this.endTime == null) return 30;
+        try {
+            LocalTime s = LocalTime.parse(this.startTime.trim());
+            LocalTime e = LocalTime.parse(this.endTime.trim());
+            long diff = Duration.between(s, e).toMinutes();
+            if (diff < 0) diff += 24 * 60;
+            return (int) diff;
+        } catch (Exception e) {
+            return 30;
+        }
+    }
 
     // ──────────────────────────────────────────────────────────────────────────
     // Object overrides

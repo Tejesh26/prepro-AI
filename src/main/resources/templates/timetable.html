@@ -245,23 +245,23 @@
                 <div class="timeline-time-col">
                     <div class="fw-bold fs-6 text-heading">
                         <i class="bi bi-clock me-1 text-muted"></i>
-                        <span th:text="${slot.startTime + ' - ' + slot.endTime}">09:00 - 09:30</span>
+                        <span th:text="${slot.formattedTimeRange12}">09:00 AM – 09:30 AM</span>
                     </div>
                     <div class="mt-1">
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY}" class="badge-soft badge-soft-success">
-                            <i class="bi bi-book-half me-1"></i> Focus Study (30m)
+                            <i class="bi bi-book-half me-1"></i> <span th:text="${'Focus Study (' + slot.durationMinutes + 'm)'}">Focus Study (30m)</span>
                         </span>
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).LUNCH}" class="badge-soft badge-soft-orange">
-                            <i class="bi bi-egg-fried me-1"></i> Lunch Break (45m)
+                            <i class="bi bi-egg-fried me-1"></i> <span th:text="${'Lunch Break (' + slot.durationMinutes + 'm)'}">Lunch Break (45m)</span>
                         </span>
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).SNACK}" class="badge-soft badge-soft-orange">
-                            <i class="bi bi-cup-straw me-1"></i> Snack Break (15m)
+                            <i class="bi bi-cup-straw me-1"></i> <span th:text="${'Snack Break (' + slot.durationMinutes + 'm)'}">Snack Break (15m)</span>
                         </span>
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).DINNER}" class="badge-soft badge-soft-orange">
-                            <i class="bi bi-fire me-1"></i> Dinner Break (45m)
+                            <i class="bi bi-fire me-1"></i> <span th:text="${'Dinner Break (' + slot.durationMinutes + 'm)'}">Dinner Break (45m)</span>
                         </span>
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).BREAK}" class="badge-soft badge-soft-warning">
-                            <i class="bi bi-cup-hot-fill me-1"></i> Small Break (10m)
+                            <i class="bi bi-cup-hot-fill me-1"></i> <span th:text="${'Small Break (' + slot.durationMinutes + 'm)'}">Small Break (10m)</span>
                         </span>
                         <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).ZOOM_MEETING}" class="badge-soft badge-soft-purple">
                             <i class="bi bi-camera-video-fill me-1"></i> Zoom Lecture
@@ -320,7 +320,7 @@
                         <th scope="col">Subject \ Time Slot</th>
                         <th scope="col" th:each="ts : ${timeSlots}">
                             <i class="bi bi-clock me-1 text-muted"></i>
-                            <span th:text="${ts}">09:00 - 09:30</span>
+                            <span th:text="${T(com.tejesh.timetable.model.TimetableSlot).formatTimeRange12(ts)}">09:00 AM – 09:30 AM</span>
                         </th>
                     </tr>
                 </thead>
@@ -363,13 +363,13 @@
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span class="badge-soft badge-soft-success py-0 px-1_5" style="font-size: 0.68rem;" th:text="${slot.subject}">STUDY</span>
-                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.formattedTimeRange12}"></small>
                                             </div>
                                             <div class="fw-bold small text-truncate" th:text="${slot.topic}">Topic</div>
                                         </div>
                                         <div class="mt-2 d-flex align-items-center justify-content-between">
                                             <span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-bell me-1"></i>Alarm Ready</span>
-                                            <small class="text-success fw-bold" style="font-size: 0.75rem;">30 Min</small>
+                                            <small class="text-success fw-bold" style="font-size: 0.75rem;" th:text="${slot.durationMinutes + ' Min'}">30 Min</small>
                                         </div>
                                     </div>
 
@@ -378,7 +378,7 @@
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span class="badge-soft badge-soft-warning py-0 px-1_5" style="font-size: 0.68rem;">BREAK</span>
-                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.formattedTimeRange12}"></small>
                                             </div>
                                             <div class="small fw-semibold text-truncate">
                                                 <i class="bi bi-cup-hot-fill text-warning me-1"></i>
@@ -386,7 +386,7 @@
                                             </div>
                                         </div>
                                         <div class="mt-2 text-end">
-                                            <small class="text-warning fw-bold" style="font-size: 0.75rem;">10 Min</small>
+                                            <small class="text-warning fw-bold" style="font-size: 0.75rem;" th:text="${slot.durationMinutes + ' Min'}">10 Min</small>
                                         </div>
                                     </div>
 
@@ -395,7 +395,7 @@
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span class="badge-soft badge-soft-purple py-0 px-1_5" style="font-size: 0.68rem;">ZOOM</span>
-                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.formattedTimeRange12}"></small>
                                             </div>
                                             <div class="fw-bold small text-truncate" th:text="${slot.topic}">Live Lecture</div>
                                         </div>
@@ -419,7 +419,7 @@
                                         <div>
                                             <div class="d-flex align-items-center justify-content-between mb-1">
                                                 <span class="badge-soft badge-soft-orange py-0 px-1_5" style="font-size: 0.68rem;" th:text="${slot.slotType.name()}">MEAL</span>
-                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.startTime + ' - ' + slot.endTime}"></small>
+                                                <small class="text-muted fw-bold" style="font-size: 0.72rem;" th:text="${slot.formattedTimeRange12}"></small>
                                             </div>
                                             <div class="small fw-bold text-truncate text-heading">
                                                 <i class="bi bi-egg-fried text-warning me-1"></i>
@@ -429,7 +429,7 @@
                                         </div>
                                         <div class="mt-2 d-flex align-items-center justify-content-between">
                                             <span class="text-muted" style="font-size: 0.7rem;"><i class="bi bi-bell-fill text-warning me-1"></i>5m Alert</span>
-                                            <small class="text-warning fw-bold" style="font-size: 0.72rem;" th:text="${slot.slotType == T(com.tejesh.timetable.model.SlotType).LUNCH ? '45 Min' : 'Snack'}">Meal</small>
+                                            <small class="text-warning fw-bold" style="font-size: 0.72rem;" th:text="${slot.durationMinutes + ' Min'}">Meal</small>
                                         </div>
                                     </div>
 
@@ -506,15 +506,37 @@
         lastSpokenKey: null
     };
 
-    // 1. Digital Clock
+    // 1. Digital Clock (12-Hour AM/PM Format)
     function updateClock() {
         const now = new Date();
-        const timeStr = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+        const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
         const clockEl = document.getElementById('companionLiveClock');
         if (clockEl) clockEl.innerText = timeStr;
     }
     setInterval(updateClock, 1000);
     updateClock();
+
+    // 12-Hour Time Format Helpers for Companion UI
+    function formatTime12(time24) {
+        if (!time24) return '';
+        if (time24.includes('AM') || time24.includes('PM')) return time24;
+        const parts = time24.trim().split(':');
+        if (parts.length >= 2) {
+            let h = parseInt(parts[0], 10);
+            const m = parts[1].padStart(2, '0');
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            if (h === 0) h = 12;
+            return `${h}:${m} ${ampm}`;
+        }
+        return time24;
+    }
+
+    function formatRange12(start, end) {
+        if (!start) return '';
+        if (!end) return formatTime12(start);
+        return `${formatTime12(start)} – ${formatTime12(end)}`;
+    }
 
     // 2. Harmonic Web Audio Chime (100% native synthesize)
     function playHarmonicChime() {
@@ -729,7 +751,8 @@
 
         if (data.currentSlot) {
             badge.className = 'badge-soft badge-soft-success';
-            badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${data.currentSlot.subject || data.currentSlot.slotType} (${data.currentSlot.startTime} - ${data.currentSlot.endTime})`;
+            const curRange = formatRange12(data.currentSlot.startTime, data.currentSlot.endTime);
+            badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${data.currentSlot.subject || data.currentSlot.slotType} (${curRange})`;
             coachTitle.innerText = data.currentSlot.slotType === 'BREAK' ? '☕ Brain Break Mode:' : '📖 Active Focus Session:';
 
             progressWrapper.style.display = 'block';
@@ -743,7 +766,8 @@
             document.getElementById('breakBtn').disabled = false;
         } else if (data.upcomingSlot) {
             badge.className = 'badge-soft badge-soft-warning';
-            badge.innerHTML = `<i class="bi bi-hourglass-split me-1"></i> Next: ${data.upcomingSlot.subject || data.upcomingSlot.slotType} at ${data.upcomingSlot.startTime}`;
+            const upStart = formatTime12(data.upcomingSlot.startTime);
+            badge.innerHTML = `<i class="bi bi-hourglass-split me-1"></i> Next: ${data.upcomingSlot.subject || data.upcomingSlot.slotType} at ${upStart}`;
             coachTitle.innerText = '⏳ Upcoming Session:';
             progressWrapper.style.display = 'none';
 
@@ -788,14 +812,17 @@
             percentCompleted: 66
         };
 
+        const range12 = formatRange12(startTime, endTime);
+        const end12 = formatTime12(endTime);
+
         const badge = document.getElementById('activeSlotBadge');
         badge.className = 'badge-soft badge-soft-success';
-        badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${subject} (${startTime} - ${endTime})`;
+        badge.innerHTML = `<i class="bi bi-book-half me-1"></i> ${subject} (${range12})`;
 
         const progressWrapper = document.getElementById('sessionProgressWrapper');
         progressWrapper.style.display = 'block';
         document.getElementById('progressSubjectLabel').innerText = `${subject} • ${topic}`;
-        document.getElementById('progressCountdown').innerText = `⏳ 10m left (Ends at ${endTime})`;
+        document.getElementById('progressCountdown').innerText = `⏳ 10m left (Ends at ${end12})`;
         document.getElementById('sessionProgressBar').style.width = '66%';
 
         triggerAlarmForSubject(subject, topic, endTime);
@@ -804,6 +831,7 @@
 
     function triggerAlarmForSubject(subject, topic, endTime) {
         playHarmonicChime();
+        const end12 = formatTime12(endTime);
         const prompt = `Hey! You have 10 minutes left in ${subject} (${topic}). Do you want to continue this subject until you're bored, switch to another subject, or take a break?`;
         document.getElementById('coachTitle').innerText = `🔔 10-Minute Smart Alarm: ${subject}`;
         document.getElementById('coachMessage').innerText = prompt;
@@ -837,8 +865,9 @@
         const data = await res.json();
         if (data.success) {
             playHarmonicChime();
-            speakText(`Great flow! Extended ${minutes} more minutes until ${data.endTime}.`);
-            showToast(`Extended ${minutes}m until ${data.endTime}!`, 'success');
+            const end12 = formatTime12(data.endTime);
+            speakText(`Great flow! Extended ${minutes} more minutes until ${end12}.`);
+            showToast(`Extended ${minutes}m until ${end12}!`, 'success');
             setTimeout(() => window.location.reload(), 1200);
         } else {
             showToast(data.error || 'Could not extend slot', 'error');

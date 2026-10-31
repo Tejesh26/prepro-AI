@@ -169,7 +169,7 @@ public class MealBreakService {
         }
 
         // Determine meals to schedule based on window and user inputs
-        List<MealPlan> requiredMeals = determineRequiredMeals(windowStart, windowEnd, windowMinutes,
+        List<MealPlan> requiredMeals = determineRequiredMeals(daySlots, windowStart, windowEnd, windowMinutes,
                 customLunchTime, customLunchDuration, userInstructions);
 
         if (requiredMeals.isEmpty()) {
@@ -237,7 +237,8 @@ public class MealBreakService {
     // 2. Meal Determination Rules
     // ──────────────────────────────────────────────────────────────────────────
 
-    private List<MealPlan> determineRequiredMeals(LocalTime windowStart,
+    private List<MealPlan> determineRequiredMeals(List<TimetableSlot> daySlots,
+                                                  LocalTime windowStart,
                                                   LocalTime windowEnd,
                                                   long windowMinutes,
                                                   LocalTime customLunchTime,
@@ -292,26 +293,48 @@ public class MealBreakService {
         // Full windows (> 4 hours / > 240 mins):
 
         // 1. Morning Snack:
-        // 15 minutes around 10:30-11:00, only if the window includes that time
-        // AND study started before 09:00 (ensuring at least ~90-120 mins of focus before morning break)
+        // 15 minutes around 10:30-11:00, only if:
+        // a) the window includes that time AND study started before 09:00
+        // b) active study is scheduled within 75 minutes of 10:30
+        // c) AND there is substantial study (at least 50 mins) between Morning Snack (10:45) and Lunch (finalLunchTime)
+        // (If there is no study between snack and lunch, having both back-to-back violates cognitive psychology)
+        boolean coversLunchSpan = !(windowEnd.isBefore(LocalTime.of(12, 0)) || windowStart.isAfter(LocalTime.of(14, 30)));
+        boolean hasStudyNearMorningSnack = hasActiveStudyNear(daySlots, LocalTime.of(10, 30), 75);
+
+        long studyMinutesBetweenSnackAndLunch = 0;
+        if (daySlots != null) {
+            for (TimetableSlot s : daySlots) {
+                if (s.getSlotType() == SlotType.STUDY) {
+                    LocalTime st = parseTimeSafe(s.getStartTime());
+                    LocalTime et = parseTimeSafe(s.getEndTime());
+                    if (st.isAfter(LocalTime.of(10, 44)) && et.isBefore(finalLunchTime.plusMinutes(1))) {
+                        studyMinutesBetweenSnackAndLunch += Duration.between(st, et).toMinutes();
+                    }
+                }
+            }
+        }
+        boolean hasSufficientStudyBeforeLunch = (studyMinutesBetweenSnackAndLunch >= 50)
+                || skipLunch || !coversLunchSpan || (windowMinutes < 240);
+
         if (windowCovers(windowStart, windowEnd, LocalTime.of(10, 30), LocalTime.of(11, 0))
-                && windowStart.isBefore(LocalTime.of(9, 0))) {
+                && windowStart.isBefore(LocalTime.of(9, 0))
+                && hasStudyNearMorningSnack
+                && hasSufficientStudyBeforeLunch) {
             meals.add(new MealPlan(SlotType.SNACK, "🥪 Morning Snack", "Healthy Snack & Hydration",
                     LocalTime.of(10, 30), 15));
         }
 
         // 2. Lunch Break:
         // Add only if window covers lunch time (any part of 12:00-14:30) AND window >= 4 hours (240 mins)
-        boolean coversLunchSpan = !(windowEnd.isBefore(LocalTime.of(12, 0)) || windowStart.isAfter(LocalTime.of(14, 30)));
-        if (!skipLunch && coversLunchSpan && windowMinutes >= 240) {
+        // AND there is active study near lunch time
+        boolean hasStudyNearLunch = hasActiveStudyNear(daySlots, finalLunchTime, 90);
+        if (!skipLunch && coversLunchSpan && windowMinutes >= 240 && hasStudyNearLunch) {
             LocalTime lunchStart = finalLunchTime;
             // If window does not include 13:00, place at closest free time inside 12:00-14:30
             if (windowEnd.isBefore(lunchStart.plusMinutes(finalLunchDuration))) {
-                // If window ends before default lunch finish, place earlier near 12:00 or windowEnd - duration
                 LocalTime clamped = windowEnd.minusMinutes(finalLunchDuration);
                 lunchStart = clamped.isBefore(LocalTime.of(12, 0)) ? LocalTime.of(12, 0) : clamped;
             } else if (windowStart.isAfter(lunchStart)) {
-                // If window starts after default lunch, place at windowStart (inside 12:00-14:30)
                 lunchStart = windowStart;
             }
 
@@ -321,15 +344,19 @@ public class MealBreakService {
 
         // 3. Evening Snack:
         // 15-20 minutes around 16:30-17:30, only if window includes that time and lasts past 16:30
+        // AND has active study nearby
+        boolean hasStudyNearEveningSnack = hasActiveStudyNear(daySlots, LocalTime.of(16, 30), 90);
         if (windowCovers(windowStart, windowEnd, LocalTime.of(16, 30), LocalTime.of(17, 0))
-                && windowEnd.isAfter(LocalTime.of(16, 30))) {
+                && windowEnd.isAfter(LocalTime.of(16, 30))
+                && hasStudyNearEveningSnack) {
             meals.add(new MealPlan(SlotType.SNACK, "🥪 Evening Snack", "Healthy Snack & Brain Refresh",
                     LocalTime.of(16, 30), 15));
         }
 
         // 4. Dinner Break:
-        // If window runs past 19:30, add a 30-45 minute dinner break around 20:00
-        if (windowEnd.isAfter(LocalTime.of(19, 30))) {
+        // If window runs past 19:30, add a 30-45 minute dinner break around 20:00 (with active study nearby)
+        boolean hasStudyNearDinner = hasActiveStudyNear(daySlots, LocalTime.of(20, 0), 90);
+        if (windowEnd.isAfter(LocalTime.of(19, 30)) && hasStudyNearDinner) {
             LocalTime dinnerTime = LocalTime.of(20, 0);
             int dinnerDuration = 45;
             // If window ends before 20:45, shift dinner earlier to 19:30
@@ -345,8 +372,9 @@ public class MealBreakService {
         }
 
         // 5. Night Snack:
-        // If window runs past 22:00, add a 10-minute light snack around 22:00
-        if (windowEnd.isAfter(LocalTime.of(22, 0))) {
+        // If window runs past 22:00, add a 10-minute light snack around 22:00 (with active study nearby)
+        boolean hasStudyNearNightSnack = hasActiveStudyNear(daySlots, LocalTime.of(22, 0), 60);
+        if (windowEnd.isAfter(LocalTime.of(22, 0)) && hasStudyNearNightSnack) {
             meals.add(new MealPlan(SlotType.SNACK, "🥛 Night Snack", "Light Refreshment & Wind-down",
                     LocalTime.of(22, 0), 10));
         }
@@ -354,6 +382,27 @@ public class MealBreakService {
         // Sort chronologically by target time
         meals.sort(Comparator.comparing(MealPlan::targetTime));
         return meals;
+    }
+
+    private boolean hasActiveStudyNear(List<TimetableSlot> daySlots, LocalTime time, int maxGapMinutes) {
+        if (daySlots == null || daySlots.isEmpty()) return true;
+        boolean anyStudy = daySlots.stream().anyMatch(s -> s.getSlotType() == SlotType.STUDY);
+        if (!anyStudy) return true;
+
+        for (TimetableSlot s : daySlots) {
+            if (s.getSlotType() == SlotType.STUDY) {
+                LocalTime st = parseTimeSafe(s.getStartTime());
+                LocalTime et = parseTimeSafe(s.getEndTime());
+                long distBefore = Duration.between(et, time).toMinutes();
+                long distAfter = Duration.between(time, st).toMinutes();
+                if ((distBefore >= 0 && distBefore <= maxGapMinutes) ||
+                    (distAfter >= 0 && distAfter <= maxGapMinutes) ||
+                    (!time.isBefore(st) && !time.isAfter(et))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private boolean windowCovers(LocalTime windowStart, LocalTime windowEnd, LocalTime rangeStart, LocalTime rangeEnd) {

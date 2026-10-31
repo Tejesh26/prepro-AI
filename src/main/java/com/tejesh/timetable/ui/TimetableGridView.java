@@ -302,14 +302,14 @@ public class TimetableGridView extends BorderPane {
 
             if (isBreakTime) {
                 timeHeader.setStyle("-fx-background-color: #e2e8f0; -fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8;");
-                Label tLabel = new Label(timeSlot);
+                Label tLabel = new Label(TimetableSlot.formatTimeRange12(timeSlot));
                 tLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: #475569;");
                 Label bLabel = new Label("☕ Rest Interval");
                 bLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #64748b;");
                 timeHeader.getChildren().addAll(tLabel, bLabel);
             } else {
                 timeHeader.setStyle("-fx-background-color: #2563eb; -fx-background-radius: 8;");
-                Label tLabel = new Label(timeSlot);
+                Label tLabel = new Label(TimetableSlot.formatTimeRange12(timeSlot));
                 tLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 12px; -fx-text-fill: white;");
                 Label bLabel = new Label("Focus Block (30m)");
                 bLabel.setStyle("-fx-font-size: 10px; -fx-text-fill: #dbeafe;");

@@ -212,13 +212,14 @@ public class AIBrainService {
         sb.append("\n\n");
 
         // ── Psychological Pacing Rule ─────────────────────────────────────────
-        sb.append("=== RULE 2: PSYCHOLOGICAL PACING – THE 30-MINUTE RULE (NON-NEGOTIABLE) ===\n");
-        sb.append("The human brain cannot maintain deep focus for more than 30 minutes continuously.\n");
-        sb.append("Therefore you MUST follow this pattern without exception:\n");
-        sb.append("  1. Schedule one STUDY slot of exactly 30 minutes.\n");
-        sb.append("  2. IMMEDIATELY follow it with one BREAK slot of 5 to 10 minutes.\n");
-        sb.append("  3. Repeat: the NEXT STUDY slot begins only after the BREAK ends.\n");
-        sb.append("  ✗ NEVER schedule two consecutive STUDY slots with no BREAK between them.\n\n");
+        sb.append("=== RULE 2: PSYCHOLOGICAL PACING & COGNITIVE SCIENCE (NON-NEGOTIABLE) ===\n");
+        sb.append("Human cognitive psychology and ultradian rhythms dictate that deep concentration peaks in 30-minute intervals.\n");
+        sb.append("Therefore you MUST follow these scientific pacing guidelines without exception:\n");
+        sb.append("  1. Schedule focused STUDY slots of exactly 30 minutes.\n");
+        sb.append("  2. IMMEDIATELY follow every STUDY slot with one BREAK slot of 5 to 10 minutes.\n");
+        sb.append("  3. Distribute study across realistic biological high-focus zones: Morning Peak (09:00–12:50), Afternoon Practice (14:00–16:30), and Evening Revision (17:00–19:30).\n");
+        sb.append("  4. ✗ NEVER schedule two consecutive STUDY slots with no BREAK between them.\n");
+        sb.append("  5. ✗ NEVER schedule isolated breaks floating in large empty gaps without surrounding study.\n\n");
 
         // ── Custom Instructions ───────────────────────────────────────────────
         sb.append("=== RULE 3: CUSTOM STUDENT INSTRUCTIONS (PARSE AND APPLY EXACTLY) ===\n");
@@ -681,19 +682,43 @@ public class AIBrainService {
         int poorIdx = 0, avgIdx = 0, goodIdx = 0;
         int studyBlockCounter = 0;
 
+        // Cognitive Psychology Schedule: 30m Deep Focus + 10m Brain Rest
+        // Naturally paced across Morning Alertness (09:00-12:50),
+        // Afternoon Practice (14:00-16:30), and Evening Revision (17:00-19:30 & 20:45-21:15).
         String[][] blocks = {
-                {"06:00", "06:30", "STUDY"},
-                {"06:30", "06:40", "BREAK"},
-                {"06:40", "07:10", "STUDY"},
-                {"07:10", "07:20", "BREAK"},
+                // Morning Peak Alertness Block (Cortisol & Executive Function Peak)
+                {"09:00", "09:30", "STUDY"},
+                {"09:30", "09:40", "BREAK"},
+                {"09:40", "10:10", "STUDY"},
+                {"10:10", "10:20", "BREAK"},
+                {"10:20", "10:50", "STUDY"},
+                {"10:50", "11:00", "BREAK"},
+                {"11:00", "11:30", "STUDY"},
+                {"11:30", "11:40", "BREAK"},
+                {"11:40", "12:10", "STUDY"},
+                {"12:10", "12:20", "BREAK"},
+                {"12:20", "12:50", "STUDY"},
+
+                // Afternoon Active Problem Solving & Deep Work
+                {"14:00", "14:30", "STUDY"},
+                {"14:30", "14:40", "BREAK"},
+                {"14:40", "15:10", "STUDY"},
+                {"15:10", "15:20", "BREAK"},
+                {"15:20", "15:50", "STUDY"},
+                {"15:50", "16:00", "BREAK"},
                 {"16:00", "16:30", "STUDY"},
-                {"16:30", "16:40", "BREAK"},
-                {"16:40", "17:10", "STUDY"},
-                {"17:10", "17:20", "BREAK"},
-                {"18:00", "18:30", "STUDY"},
-                {"18:30", "18:40", "BREAK"},
+
+                // Evening Synaptic Consolidation & Retrieval Practice
+                {"17:00", "17:30", "STUDY"},
+                {"17:30", "17:40", "BREAK"},
+                {"17:40", "18:10", "STUDY"},
+                {"18:10", "18:20", "BREAK"},
+                {"18:20", "18:50", "STUDY"},
+                {"18:50", "19:00", "BREAK"},
                 {"19:00", "19:30", "STUDY"},
-                {"19:30", "19:40", "BREAK"}
+
+                // Night Light Wrap-Up & Daily Summary
+                {"20:45", "21:15", "STUDY"}
         };
 
         for (String day : days) {

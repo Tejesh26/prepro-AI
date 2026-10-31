@@ -117,12 +117,12 @@ public class AutomationSchedulerService {
             if (slot.getSlotType() == SlotType.STUDY) {
                 notificationService.sendDesktopAlert(
                         "⏰ 10-Min Smart Alarm",
-                        "Hey " + username + ", your " + slot.getSubject() + " session starts in 10 minutes! Ready to study, or would you like to continue, switch subjects, or take a break?"
+                        "Hey " + username + ", your " + slot.getSubject() + " session starts in 10 minutes (at " + slot.getFormattedStartTime12() + ")! Ready to study, or would you like to continue, switch subjects, or take a break?"
                 );
                 processedAlerts.add(alertKey);
             } else if (slot.getSlotType() == SlotType.ZOOM_MEETING) {
                 // If the slot is a Zoom meeting from timetable slots
-                handleZoomWarning(slot.getId(), username, slot.getTopic(), targetStartTime, today, alertKey);
+                handleZoomWarning(slot.getId(), username, slot.getTopic(), slot.getFormattedStartTime12(), today, alertKey);
             }
         }
 

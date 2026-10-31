@@ -326,4 +326,49 @@ class MealBreakServiceTest {
         assertNotNull(smallBreak, "Small cognitive break must exist between study sessions");
         assertTrue(smallBreak.getTopic().contains("Cognitive") || smallBreak.getSubject().contains("Break"));
     }
+
+    @Test
+    @DisplayName("10. 12-Hour Time Format converts 24h times to AM/PM correctly")
+    void testTwelveHourTimeFormatting() {
+        assertEquals("9:00 AM", TimetableSlot.format12Hour("09:00"));
+        assertEquals("10:30 AM", TimetableSlot.format12Hour("10:30"));
+        assertEquals("12:00 PM", TimetableSlot.format12Hour("12:00"));
+        assertEquals("1:00 PM", TimetableSlot.format12Hour("13:00"));
+        assertEquals("2:00 PM", TimetableSlot.format12Hour("14:00"));
+        assertEquals("4:30 PM", TimetableSlot.format12Hour("16:30"));
+        assertEquals("8:00 PM", TimetableSlot.format12Hour("20:00"));
+
+        assertEquals("10:30 AM – 10:45 AM", TimetableSlot.formatTimeRange12("10:30 - 10:45"));
+        assertEquals("1:00 PM – 2:00 PM", TimetableSlot.formatTimeRange12("13:00 - 14:00"));
+
+        TimetableSlot slot = new TimetableSlot(1L, "Monday", "13:00", "13:45", "Lunch Break", "Meal", SlotType.LUNCH, null);
+        assertEquals("1:00 PM", slot.getFormattedStartTime12());
+        assertEquals("1:45 PM", slot.getFormattedEndTime12());
+        assertEquals("1:00 PM – 1:45 PM", slot.getFormattedTimeRange12());
+        assertEquals(45, slot.getDurationMinutes());
+    }
+
+    @Test
+    @DisplayName("11. Psychology Rule: Do NOT insert isolated meal breaks in large non-study gaps")
+    void testNoMealBreaksInEmptyStudyGapAccordingToPsychology() {
+        // Study only 06:00 to 07:20, and 16:00 to 18:00 (e.g. working student / school student)
+        List<TimetableSlot> slots = new ArrayList<>();
+        slots.add(new TimetableSlot(null, "Wednesday", "06:00", "06:30", "Physics", "Mechanics", SlotType.STUDY, null));
+        slots.add(new TimetableSlot(null, "Wednesday", "06:30", "06:40", "", "Rest", SlotType.BREAK, null));
+        slots.add(new TimetableSlot(null, "Wednesday", "06:40", "07:10", "Physics", "Forces", SlotType.STUDY, null));
+
+        slots.add(new TimetableSlot(null, "Wednesday", "16:00", "16:30", "Chemistry", "Organic", SlotType.STUDY, null));
+        slots.add(new TimetableSlot(null, "Wednesday", "16:30", "16:40", "", "Rest", SlotType.BREAK, null));
+        slots.add(new TimetableSlot(null, "Wednesday", "16:40", "17:10", "Chemistry", "Reactions", SlotType.STUDY, null));
+
+        List<TimetableSlot> result = mealBreakService.insertMealBreaks(slots, LocalTime.of(6, 0), LocalTime.of(17, 10));
+
+        // There should be NO morning snack at 10:30 or lunch at 13:00 in this timetable because
+        // the student is NOT studying between 07:10 and 16:00!
+        boolean hasMorningSnack = result.stream().anyMatch(s -> s.getSlotType() == SlotType.SNACK && s.getStartTime().equals("10:30"));
+        boolean hasLunch = result.stream().anyMatch(s -> s.getSlotType() == SlotType.LUNCH && s.getStartTime().equals("13:00"));
+
+        assertFalse(hasMorningSnack, "Must NOT insert 10:30 morning snack when study ended at 07:10");
+        assertFalse(hasLunch, "Must NOT insert 13:00 lunch when no study occurs anywhere near 13:00");
+    }
 }

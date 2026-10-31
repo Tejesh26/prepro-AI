@@ -527,24 +527,27 @@ public class TimetableManagerService {
             String sub = (upcomingSlot.getSubject() != null && !upcomingSlot.getSubject().isBlank())
                     ? upcomingSlot.getSubject()
                     : upcomingSlot.getSlotType().name();
+            String upStart12 = TimetableSlot.format12Hour(upcomingSlot.getStartTime());
+            String upEnd12 = TimetableSlot.format12Hour(upcomingSlot.getEndTime());
 
             if (upcomingSlot.getSlotType() != null && upcomingSlot.getSlotType().isMeal()) {
-                dto.setSmartPrompt(String.format("🍽️ Nourishment Alert: %s in %d minute%s (%s - %s)! Time to wrap up and enjoy your food.",
-                        sub, closestStartsIn, (closestStartsIn == 1 ? "" : "s"), upcomingSlot.getStartTime(), upcomingSlot.getEndTime()));
-                dto.setSpeechText(String.format("Heads up %s, %s in %d minutes.", username, sub, closestStartsIn));
+                dto.setSmartPrompt(String.format("🍽️ Nourishment Alert: %s in %d minute%s (%s – %s)! Time to wrap up and enjoy your food.",
+                        sub, closestStartsIn, (closestStartsIn == 1 ? "" : "s"), upStart12, upEnd12));
+                dto.setSpeechText(String.format("Heads up %s, %s starts in %d minutes at %s.", username, sub, closestStartsIn, upStart12));
             } else {
-                dto.setSmartPrompt(String.format("⏰ Heads up %s! Your next session [%s] starts in %d minutes (%s - %s). Are you ready to dive into %s, or do you want to switch or adjust?",
-                        username, sub, closestStartsIn, upcomingSlot.getStartTime(), upcomingSlot.getEndTime(),
+                dto.setSmartPrompt(String.format("⏰ Heads up %s! Your next session [%s] starts in %d minutes (%s – %s). Are you ready to dive into %s, or do you want to switch or adjust?",
+                        username, sub, closestStartsIn, upStart12, upEnd12,
                         (upcomingSlot.getTopic() != null ? upcomingSlot.getTopic() : "study topic")));
 
-                dto.setSpeechText(String.format("Hey %s! Your %s session starts in %d minutes. Are you ready to continue, switch subjects, or take a break?",
-                        username, sub, closestStartsIn));
+                dto.setSpeechText(String.format("Hey %s! Your %s session starts in %d minutes at %s. Are you ready to continue, switch subjects, or take a break?",
+                        username, sub, closestStartsIn, upStart12));
             }
 
         // 2. Ending Soon Alert: Active slot has 1 to 10 minutes remaining
         } else if (activeSlot != null) {
             LocalTime end = LocalTime.parse(activeSlot.getEndTime());
             long remaining = Duration.between(now, end).toMinutes();
+            String actEnd12 = TimetableSlot.format12Hour(activeSlot.getEndTime());
 
             if (remaining >= 0 && remaining <= 10) {
                 dto.setWarningActive(true);
@@ -572,20 +575,21 @@ public class TimetableManagerService {
                 dto.setWarningActive(false);
                 dto.setAlertType("ACTIVE_MEAL");
                 dto.setSmartPrompt(String.format("🍽️ Enjoying %s (%s). %d minutes remaining until %s.",
-                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, activeSlot.getEndTime()));
+                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, actEnd12));
                 dto.setSpeechText("");
             } else {
                 dto.setWarningActive(false);
                 dto.setAlertType("ACTIVE_STUDY");
                 dto.setSmartPrompt(String.format("📖 Studying %s: %s. %d minutes remaining until %s.",
-                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, activeSlot.getEndTime()));
+                        activeSlot.getSubject(), activeSlot.getTopic(), remaining, actEnd12));
                 dto.setSpeechText("");
             }
         } else if (upcomingSlot != null) {
+            String upStart12 = TimetableSlot.format12Hour(upcomingSlot.getStartTime());
             dto.setWarningActive(false);
             dto.setAlertType("BETWEEN_SLOTS");
             dto.setSmartPrompt(String.format("✨ Up next on %s: %s starting at %s (in %d minutes).",
-                    day, upcomingSlot.getSubject(), upcomingSlot.getStartTime(), closestStartsIn));
+                    day, upcomingSlot.getSubject(), upStart12, closestStartsIn));
             dto.setSpeechText("");
         } else {
             dto.setWarningActive(false);

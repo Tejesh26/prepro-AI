@@ -75,8 +75,8 @@ public class ExportService {
 
             for (TimetableSlot slot : slots) {
                 String day = escapeCsv(slot.getDayOfWeek());
-                String start = escapeCsv(slot.getStartTime());
-                String end = escapeCsv(slot.getEndTime());
+                String start = escapeCsv(slot.getFormattedStartTime12());
+                String end = escapeCsv(slot.getFormattedEndTime12());
                 String subject = escapeCsv(slot.getSubject());
                 String topic = escapeCsv(slot.getTopic());
                 String slotType = escapeCsv(slot.getSlotType() != null ? slot.getSlotType().name() : "");
@@ -216,8 +216,8 @@ public class ExportService {
                 };
 
                 createStyledCell(row, 0, nvl(slot.getDayOfWeek(), ""), rowStyle);
-                createStyledCell(row, 1, nvl(slot.getStartTime(), ""), rowStyle);
-                createStyledCell(row, 2, nvl(slot.getEndTime(), ""), rowStyle);
+                createStyledCell(row, 1, nvl(slot.getFormattedStartTime12(), ""), rowStyle);
+                createStyledCell(row, 2, nvl(slot.getFormattedEndTime12(), ""), rowStyle);
                 createStyledCell(row, 3, nvl(slot.getSubject(), "—"), rowStyle);
                 createStyledCell(row, 4, nvl(slot.getTopic(), "—"), rowStyle);
                 createStyledCell(row, 5, slot.getSlotType() != null ? slot.getSlotType().name() : "", rowStyle);
@@ -322,7 +322,7 @@ public class ExportService {
 
                 // Prepare row cell values
                 String day = sanitize(slot.getDayOfWeek());
-                String time = sanitize(slot.getStartTime() + " - " + slot.getEndTime());
+                String time = sanitize(slot.getFormattedTimeRange12());
                 String subject = sanitize(nvl(slot.getSubject(), "—"));
                 String topic = sanitize(nvl(slot.getTopic(), "—"));
                 if (slot.getSlotType() == SlotType.ZOOM_MEETING && slot.getMeetingLink() != null) {
