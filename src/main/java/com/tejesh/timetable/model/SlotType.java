@@ -51,6 +51,13 @@ public enum SlotType {
     }
 
     /**
+     * Checks if this slot represents a major meal (Lunch or Dinner).
+     */
+    public boolean isMajorMeal() {
+        return this == LUNCH || this == DINNER;
+    }
+
+    /**
      * Tolerant Jackson deserializer that prevents crashes when LLMs generate
      * creative slot labels like "REVISION", "LECTURE", "REST", "LUNCH", etc.
      *

@@ -673,6 +673,61 @@ a:hover {
 }
 
 /* -----------------------------------------------------------------------------
+   11B. Daily Timeline Schedule View
+----------------------------------------------------------------------------- */
+.timeline-container {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.timeline-slot-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+    position: relative;
+    overflow: hidden;
+}
+
+.timeline-slot-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.timeline-slot-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 5px;
+}
+
+.timeline-slot-study::before { background-color: var(--success); }
+.timeline-slot-break::before { background-color: var(--warning); }
+.timeline-slot-meal::before { background-color: #f97316; }
+.timeline-slot-zoom::before { background-color: var(--purple); }
+
+.timeline-time-col {
+    min-width: 140px;
+    flex-shrink: 0;
+}
+
+.timeline-content-col {
+    flex: 1;
+    padding: 0 16px;
+}
+
+.timeline-action-col {
+    flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
    12. Toast System
 ----------------------------------------------------------------------------- */
 .toast-container-corner {

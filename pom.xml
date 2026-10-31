@@ -91,6 +91,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- ── PostgreSQL Driver (cloud deployment on Render/Railway/AWS) ──── -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+
         <!-- ── Jackson JSON (core + Java-8 date/time types) ─────────────── -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>

@@ -300,11 +300,29 @@ public class WebController {
         if (activeDay == null || activeDay.isBlank()) activeDay = "Monday";
 
         // Filter slots for active day
-        final String targetDay = activeDay;
+        String targetDay = activeDay;
         List<TimetableSlot> daySlots = allSlots.stream()
                 .filter(s -> s.getDayOfWeek() != null && s.getDayOfWeek().equalsIgnoreCase(targetDay))
                 .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
                 .collect(Collectors.toList());
+
+        // If the selected or default day has no slots, automatically fall back to the first day with slots
+        if (daySlots.isEmpty() && (day == null || day.isBlank())) {
+            for (TimetableSlot s : allSlots) {
+                if (s.getDayOfWeek() != null && !s.getDayOfWeek().isBlank()) {
+                    String candidate = capitalize(s.getDayOfWeek());
+                    List<TimetableSlot> candidateSlots = allSlots.stream()
+                            .filter(slot -> slot.getDayOfWeek() != null && slot.getDayOfWeek().equalsIgnoreCase(candidate))
+                            .sorted((a, b) -> a.getStartTime().compareTo(b.getStartTime()))
+                            .collect(Collectors.toList());
+                    if (!candidateSlots.isEmpty()) {
+                        activeDay = candidate;
+                        daySlots = candidateSlots;
+                        break;
+                    }
+                }
+            }
+        }
 
         // Extract X-Axis: Unique Time Slots
         List<String> timeSlots = daySlots.stream()

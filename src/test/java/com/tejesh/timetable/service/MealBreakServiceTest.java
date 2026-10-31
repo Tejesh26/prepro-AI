@@ -264,4 +264,66 @@ class MealBreakServiceTest {
         assertEquals("12:30", lunch.getStartTime(), "Custom lunch starts at 12:30");
         assertEquals("13:00", lunch.getEndTime(), "Custom lunch of 30m ends at 13:00");
     }
+
+    @Test
+    @DisplayName("8. Verify that NO two breaks or slots ever overlap across entire day")
+    void testNoTwoBreaksOrSlotsOverlap() {
+        LocalTime windowStart = LocalTime.of(8, 0);
+        LocalTime windowEnd = LocalTime.of(22, 0);
+        List<TimetableSlot> initialSlots = buildPacedSlots("Monday", windowStart, windowEnd);
+
+        List<TimetableSlot> result = mealBreakService.insertMealBreaks(initialSlots, windowStart, windowEnd);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+
+        for (int i = 0; i < result.size() - 1; i++) {
+            TimetableSlot current = result.get(i);
+            TimetableSlot next = result.get(i + 1);
+
+            LocalTime currEnd = LocalTime.parse(current.getEndTime());
+            LocalTime nextStart = LocalTime.parse(next.getStartTime());
+
+            // Zero overlap rule: currEnd must be <= nextStart
+            assertFalse(currEnd.isAfter(nextStart),
+                    String.format("Overlap detected between slot %s (%s-%s) and slot %s (%s-%s)",
+                            current.getSubject(), current.getStartTime(), current.getEndTime(),
+                            next.getSubject(), next.getStartTime(), next.getEndTime()));
+
+            // Verify two breaks (meal or cognitive) never directly abut or overlap
+            boolean currentIsBreak = current.getSlotType() == SlotType.BREAK || (current.getSlotType() != null && current.getSlotType().isMeal());
+            boolean nextIsBreak = next.getSlotType() == SlotType.BREAK || (next.getSlotType() != null && next.getSlotType().isMeal());
+
+            assertFalse(currentIsBreak && nextIsBreak && currEnd.equals(nextStart),
+                    String.format("Two breaks directly abut without study gap: %s (%s-%s) and %s (%s-%s)",
+                            current.getSubject(), current.getStartTime(), current.getEndTime(),
+                            next.getSubject(), next.getStartTime(), next.getEndTime()));
+        }
+    }
+
+    @Test
+    @DisplayName("9. Verify break types are cleanly categorized according to time (Lunch, Snack, Small Break)")
+    void testBreakCategorizationAccordingToTime() {
+        LocalTime windowStart = LocalTime.of(8, 0);
+        LocalTime windowEnd = LocalTime.of(21, 0);
+        List<TimetableSlot> initialSlots = buildPacedSlots("Tuesday", windowStart, windowEnd);
+
+        List<TimetableSlot> result = mealBreakService.insertMealBreaks(initialSlots, windowStart, windowEnd);
+
+        // Check Lunch Break
+        TimetableSlot lunch = result.stream().filter(s -> s.getSlotType() == SlotType.LUNCH).findFirst().orElse(null);
+        assertNotNull(lunch, "Lunch break must exist in 8:00-21:00 window");
+        assertTrue(lunch.getSubject().contains("Lunch"));
+        assertEquals("13:00", lunch.getStartTime());
+
+        // Check Snack Break
+        TimetableSlot snack = result.stream().filter(s -> s.getSlotType() == SlotType.SNACK).findFirst().orElse(null);
+        assertNotNull(snack, "Snack break must exist");
+        assertTrue(snack.getSubject().contains("Snack"));
+
+        // Check Cognitive Small Break
+        TimetableSlot smallBreak = result.stream().filter(s -> s.getSlotType() == SlotType.BREAK).findFirst().orElse(null);
+        assertNotNull(smallBreak, "Small cognitive break must exist between study sessions");
+        assertTrue(smallBreak.getTopic().contains("Cognitive") || smallBreak.getSubject().contains("Break"));
+    }
 }

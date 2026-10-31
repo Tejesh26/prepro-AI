@@ -122,6 +122,9 @@
                 <span class="badge-soft badge-soft-primary" style="font-size: 0.85rem;">
                     <i class="bi bi-clock me-1"></i> <span id="companionLiveClock">--:--:--</span>
                 </span>
+                <span class="badge-soft badge-soft-primary" style="font-size: 0.82rem;" title="AI Speech Synthesis configured exclusively with Natural Female Voice">
+                    <i class="bi bi-person-heart text-danger me-1"></i> Female Voice: <span id="femaleVoiceName" class="fw-semibold ms-1">Active</span>
+                </span>
                 <button id="toggleVoiceBtn" class="btn btn-ghost btn-sm" onclick="toggleVoiceCoach()" title="Toggle spoken audio alerts">
                     <i id="voiceIcon" class="bi bi-volume-up-fill me-1"></i> Voice Coach: <span id="voiceStatusText">ON</span>
                 </button>
@@ -185,7 +188,7 @@
     <!-- Master Timetable Card with Day Tabs -->
     <div class="app-card mb-4">
 
-        <!-- Day Selector Pill Navigation -->
+        <!-- Day Selector Pill Navigation & View Switcher -->
         <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4 pb-3 border-bottom" style="border-color: var(--border-color) !important;">
             <div class="d-flex flex-wrap align-items-center gap-1_5">
                 <span class="text-muted small fw-bold text-uppercase me-2" style="font-size: 0.75rem;">Day:</span>
@@ -198,24 +201,119 @@
                 </a>
             </div>
 
-            <div class="d-flex align-items-center gap-3 small text-muted">
-                <span><span class="badge-soft badge-soft-success me-1">&bull;</span> Study (30m)</span>
-                <span><span class="badge-soft badge-soft-warning me-1">&bull;</span> Break (10m)</span>
-                <span><span class="badge-soft badge-soft-orange me-1">&bull;</span> Meal Break</span>
-                <span><span class="badge-soft badge-soft-purple me-1">&bull;</span> Zoom Class</span>
+            <!-- View Switcher & Legend -->
+            <div class="d-flex flex-wrap align-items-center gap-3">
+                <div class="btn-group btn-group-sm" role="group" aria-label="View Toggle">
+                    <button type="button" id="btnViewTimeline" class="btn btn-primary" onclick="switchView('timeline')">
+                        <i class="bi bi-clock-history me-1"></i> Day Timeline
+                    </button>
+                    <button type="button" id="btnViewMatrix" class="btn btn-ghost" onclick="switchView('matrix')">
+                        <i class="bi bi-grid-3x3 me-1"></i> Master Grid
+                    </button>
+                </div>
+
+                <div class="d-none d-md-flex align-items-center gap-2 small text-muted">
+                    <span><span class="badge-soft badge-soft-success me-1">&bull;</span> Study</span>
+                    <span><span class="badge-soft badge-soft-warning me-1">&bull;</span> Small Break</span>
+                    <span><span class="badge-soft badge-soft-orange me-1">&bull;</span> Meals</span>
+                    <span><span class="badge-soft badge-soft-purple me-1">&bull;</span> Zoom</span>
+                </div>
             </div>
         </div>
 
         <!-- Empty State -->
-        <div th:if="${timeSlots.isEmpty()}" class="alert alert-light text-center py-5 border rounded-3">
+        <div th:if="${daySlots.isEmpty()}" class="alert alert-light text-center py-5 border rounded-3">
             <i class="bi bi-calendar-x text-muted display-4 d-block mb-3"></i>
             <h5 class="fw-bold text-heading">No slots scheduled for <span th:text="${activeDay}"></span></h5>
             <p class="text-muted small mb-3">Choose another day or generate a new study timetable.</p>
             <a th:href="@{/dashboard}" class="btn btn-primary btn-sm">Open Input Dashboard</a>
         </div>
 
-        <!-- 2D Fixed Master Timetable Grid (X: Time Slots, Y: Subjects) -->
-        <div th:if="${!timeSlots.isEmpty()}" class="grid-container mb-4">
+        <!-- 1. Day Timeline Schedule View (Chronological Agenda) -->
+        <div id="timelineScheduleView" th:if="${!daySlots.isEmpty()}" class="timeline-container mb-4">
+            <div th:each="slot : ${daySlots}"
+                 class="timeline-slot-card"
+                 th:classappend="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY ? 'timeline-slot-study study-slot-action' : (slot.slotType != null and slot.slotType.isMeal() ? 'timeline-slot-meal' : (slot.slotType == T(com.tejesh.timetable.model.SlotType).ZOOM_MEETING ? 'timeline-slot-zoom' : 'timeline-slot-break'))}"
+                 th:data-slot-id="${slot.id}"
+                 th:data-slot-subject="${slot.subject ?: 'Study Session'}"
+                 th:data-slot-topic="${slot.topic ?: ''}"
+                 th:data-slot-start="${slot.startTime}"
+                 th:data-slot-end="${slot.endTime}"
+                 th:style="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY ? 'cursor: pointer;' : ''}">
+
+                <!-- Left Column: Time & Type Badge -->
+                <div class="timeline-time-col">
+                    <div class="fw-bold fs-6 text-heading">
+                        <i class="bi bi-clock me-1 text-muted"></i>
+                        <span th:text="${slot.startTime + ' - ' + slot.endTime}">09:00 - 09:30</span>
+                    </div>
+                    <div class="mt-1">
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY}" class="badge-soft badge-soft-success">
+                            <i class="bi bi-book-half me-1"></i> Focus Study (30m)
+                        </span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).LUNCH}" class="badge-soft badge-soft-orange">
+                            <i class="bi bi-egg-fried me-1"></i> Lunch Break (45m)
+                        </span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).SNACK}" class="badge-soft badge-soft-orange">
+                            <i class="bi bi-cup-straw me-1"></i> Snack Break (15m)
+                        </span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).DINNER}" class="badge-soft badge-soft-orange">
+                            <i class="bi bi-fire me-1"></i> Dinner Break (45m)
+                        </span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).BREAK}" class="badge-soft badge-soft-warning">
+                            <i class="bi bi-cup-hot-fill me-1"></i> Small Break (10m)
+                        </span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).ZOOM_MEETING}" class="badge-soft badge-soft-purple">
+                            <i class="bi bi-camera-video-fill me-1"></i> Zoom Lecture
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Middle Column: Subject & Topic Details -->
+                <div class="timeline-content-col">
+                    <div class="fw-bold text-heading fs-6 mb-1">
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY}" th:text="${slot.subject}">Physics</span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).LUNCH}">🍱 Midday Lunch & Nourishment</span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).SNACK}">🥪 Healthy Snack & Energy Boost</span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).DINNER}">🍽️ Evening Dinner & Relaxation</span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).BREAK}">☕ Cognitive Rest & Hydration</span>
+                        <span th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).ZOOM_MEETING}" th:text="${slot.subject ?: 'Online Class'}">Live Zoom Class</span>
+                    </div>
+                    <div class="small text-muted">
+                        <span th:text="${slot.topic != null and !slot.topic.isBlank() ? slot.topic : 'Scheduled Session'}">Topic description</span>
+                    </div>
+                </div>
+
+                <!-- Right Column: Interactive Actions -->
+                <div class="timeline-action-col text-end">
+                    <div th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).STUDY}">
+                        <button type="button" class="btn btn-sm btn-outline-success">
+                            <i class="bi bi-bell-fill me-1"></i> Set Alarm
+                        </button>
+                    </div>
+                    <div th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).ZOOM_MEETING}">
+                        <a th:if="${slot.meetingLink != null and !slot.meetingLink.isBlank()}"
+                           th:href="${slot.meetingLink}" target="_blank" class="btn btn-sm btn-primary">
+                            <i class="bi bi-box-arrow-up-right me-1"></i> Join Zoom
+                        </a>
+                    </div>
+                    <div th:if="${slot.slotType != null and slot.slotType.isMeal()}">
+                        <span class="badge-soft badge-soft-orange" style="font-size: 0.78rem;">
+                            <i class="bi bi-bell-fill me-1"></i> 5m Alert Active
+                        </span>
+                    </div>
+                    <div th:if="${slot.slotType == T(com.tejesh.timetable.model.SlotType).BREAK}">
+                        <span class="badge-soft badge-soft-warning" style="font-size: 0.78rem;">
+                            <i class="bi bi-battery-charging me-1"></i> Refresh Mode
+                        </span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- 2. Master Matrix Grid View -->
+        <div id="matrixGridView" th:if="${!timeSlots.isEmpty()}" class="grid-container mb-4" style="display: none;">
             <table class="timetable-grid-table">
                 <thead>
                     <tr>
@@ -443,18 +541,85 @@
         }
     }
 
-    // 3. Web Speech Synthesis
+    // 3. Web Speech Synthesis – Exclusively Natural Female Voice
+    let cachedVoices = [];
+    function loadVoices() {
+        if (!('speechSynthesis' in window)) return;
+        cachedVoices = window.speechSynthesis.getVoices() || [];
+        const fv = getBestFemaleVoice();
+        const fvNameEl = document.getElementById('femaleVoiceName');
+        if (fvNameEl && fv) {
+            const shortName = fv.name.replace(/Microsoft|Google|Desktop|English|United States|Natural/gi, '').trim() || 'Natural Female';
+            fvNameEl.innerText = shortName.substring(0, 16);
+        }
+    }
+
+    if ('speechSynthesis' in window) {
+        loadVoices();
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+    }
+
+    function getBestFemaleVoice() {
+        if (!cachedVoices || cachedVoices.length === 0) {
+            loadVoices();
+        }
+        if (!cachedVoices || cachedVoices.length === 0) return null;
+
+        // Disallow male voice keywords completely
+        const maleKeywords = ['david', 'mark', 'george', 'richard', 'james', 'daniel', 'guy', 'male'];
+
+        // Known natural female voices across OS and browsers:
+        // Windows (Zira, Jenny, Aria), macOS/iOS (Samantha, Victoria, Karen, Hazel, Serena),
+        // Chrome/Android (Google UK English Female, Google US English, en-us-x-sfg#female)
+        const femaleKeywords = [
+            'zira', 'samantha', 'aria', 'jenny', 'karen', 'victoria', 'hazel',
+            'susan', 'catherine', 'fiona', 'serena', 'moira', 'tessa', 'female',
+            'woman', 'natural', 'neural', 'wavenet'
+        ];
+
+        const enVoices = cachedVoices.filter(v => v.lang && v.lang.toLowerCase().startsWith('en'));
+
+        // 1. Check for explicit female name matches
+        for (const kw of femaleKeywords) {
+            const match = enVoices.find(v => {
+                const name = v.name.toLowerCase();
+                const isMale = maleKeywords.some(m => name.includes(m));
+                return !isMale && name.includes(kw);
+            });
+            if (match) return match;
+        }
+
+        // 2. Google English Female or Android local female
+        const googleMatch = enVoices.find(v => {
+            const name = v.name.toLowerCase();
+            return name.includes('google') && !maleKeywords.some(m => name.includes(m)) && !name.includes('male');
+        });
+        if (googleMatch) return googleMatch;
+
+        // 3. Fallback to any non-male voice
+        const nonMale = enVoices.find(v => {
+            const name = v.name.toLowerCase();
+            return !maleKeywords.some(m => name.includes(m));
+        });
+        if (nonMale) return nonMale;
+
+        return enVoices[0] || cachedVoices[0];
+    }
+
     function speakText(text) {
         if (!companionState.voiceCoachEnabled || !('speechSynthesis' in window)) return;
         try {
             window.speechSynthesis.cancel();
             const utterance = new SpeechSynthesisUtterance(text);
-            utterance.rate = 1.0;
-            utterance.pitch = 1.05;
+            utterance.rate = 0.95;  // Comfortable, warm, human cadence
+            utterance.pitch = 1.15; // Natural warm female pitch
             utterance.lang = 'en-US';
-            const voices = window.speechSynthesis.getVoices();
-            const preferred = voices.find(v => v.lang.startsWith('en') && (v.name.includes('Natural') || v.name.includes('Google') || v.name.includes('Samantha')));
-            if (preferred) utterance.voice = preferred;
+
+            const femaleVoice = getBestFemaleVoice();
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+
             window.speechSynthesis.speak(utterance);
         } catch (e) {
             console.warn('Speech synthesis error:', e);
@@ -470,8 +635,8 @@
         if (companionState.voiceCoachEnabled) {
             icon.className = 'bi bi-volume-up-fill me-1';
             text.innerText = 'ON';
-            speakText("Voice coach enabled. I'll remind you 10 minutes before transitions.");
-            showToast('Voice Coach enabled.', 'info');
+            speakText("Voice coach enabled. I will remind you with natural audio alerts before your transitions.");
+            showToast('Voice Coach enabled (Natural Female Voice).', 'info');
         } else {
             icon.className = 'bi bi-volume-mute-fill me-1';
             text.innerText = 'OFF';
@@ -479,6 +644,34 @@
             showToast('Voice Coach muted.', 'info');
         }
     }
+
+    // View Switching: Day Timeline (Agenda) vs Master Matrix Grid
+    function switchView(mode) {
+        const timeline = document.getElementById('timelineScheduleView');
+        const matrix = document.getElementById('matrixGridView');
+        const btnTimeline = document.getElementById('btnViewTimeline');
+        const btnMatrix = document.getElementById('btnViewMatrix');
+
+        if (mode === 'timeline') {
+            if (timeline) timeline.style.display = 'flex';
+            if (matrix) matrix.style.display = 'none';
+            if (btnTimeline) { btnTimeline.className = 'btn btn-primary'; }
+            if (btnMatrix) { btnMatrix.className = 'btn btn-ghost'; }
+            try { localStorage.setItem('prepro_timetable_view', 'timeline'); } catch (e) {}
+        } else {
+            if (timeline) timeline.style.display = 'none';
+            if (matrix) matrix.style.display = 'block';
+            if (btnTimeline) { btnTimeline.className = 'btn btn-ghost'; }
+            if (btnMatrix) { btnMatrix.className = 'btn btn-primary'; }
+            try { localStorage.setItem('prepro_timetable_view', 'matrix'); } catch (e) {}
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        let savedView = 'timeline';
+        try { savedView = localStorage.getItem('prepro_timetable_view') || 'timeline'; } catch (e) {}
+        switchView(savedView);
+    });
 
     function requestNotificationPermission() {
         if (!('Notification' in window)) {

@@ -494,6 +494,7 @@ public class MealBreakService {
         finalSlots.sort(Comparator.comparing(s -> LocalTime.parse(s.getStartTime(), TIME_FORMATTER)));
 
         // Insert standard 5-10m cognitive breaks between consecutive study sessions if gap exists
+        // (Ensure no cognitive break is inserted adjacent to a meal break or online meeting)
         List<TimetableSlot> withBreaks = new ArrayList<>();
         for (int i = 0; i < finalSlots.size(); i++) {
             TimetableSlot current = finalSlots.get(i);
@@ -501,19 +502,20 @@ public class MealBreakService {
 
             if (i < finalSlots.size() - 1) {
                 TimetableSlot next = finalSlots.get(i + 1);
-                LocalTime currEnd = LocalTime.parse(current.getEndTime(), TIME_FORMATTER);
-                LocalTime nextStart = LocalTime.parse(next.getStartTime(), TIME_FORMATTER);
+                LocalTime currEnd = parseTimeSafe(current.getEndTime());
+                LocalTime nextStart = parseTimeSafe(next.getStartTime());
                 long gapMinutes = Duration.between(currEnd, nextStart).toMinutes();
 
-                // If gap is between 5 and 15 mins between study blocks, formalize as cognitive break
-                if (gapMinutes >= 5 && gapMinutes <= 15 && current.getSlotType() == SlotType.STUDY) {
+                // Only insert a small cognitive break strictly between two STUDY sessions
+                boolean isBetweenStudyBlocks = (current.getSlotType() == SlotType.STUDY && next.getSlotType() == SlotType.STUDY);
+                if (gapMinutes >= 5 && gapMinutes <= 15 && isBetweenStudyBlocks) {
                     withBreaks.add(new TimetableSlot(
                             null,
                             dayOfWeek,
                             currEnd.format(TIME_FORMATTER),
                             nextStart.format(TIME_FORMATTER),
-                            "",
-                            "☕ Cognitive Rest & Hydration",
+                            "☕ Small Break",
+                            "Cognitive Rest & Hydration (10m)",
                             SlotType.BREAK,
                             null
                     ));
@@ -521,7 +523,161 @@ public class MealBreakService {
             }
         }
 
-        return withBreaks;
+        // Apply master deconfliction: guarantees NO two breaks overlap and s1.endTime <= s2.startTime
+        return deconflictSchedule(withBreaks);
+    }
+
+    /**
+     * Master deconflicter: enforces that NO TWO BREAKS OR SLOTS EVER OVERLAP.
+     * <p>
+     * Guarantees:
+     * <ul>
+     *   <li>Strict chronological ordering: {@code slot1.endTime <= slot2.startTime}.</li>
+     *   <li>Meal breaks (Lunch, Snacks, Dinner) strictly take precedence over small breaks.</li>
+     *   <li>No two breaks (meal or cognitive) overlap or abut awkwardly.</li>
+     *   <li>Displaced study sessions are shifted forward without time loss.</li>
+     * </ul>
+     *
+     * @param slots raw day slots
+     * @return deconflicted, sorted list with zero overlapping intervals
+     */
+    public List<TimetableSlot> deconflictSchedule(List<TimetableSlot> slots) {
+        if (slots == null || slots.isEmpty()) return new ArrayList<>();
+
+        // Sort by start time, breaking ties by slot priority (ZOOM > MEAL > STUDY > BREAK)
+        List<TimetableSlot> sorted = new ArrayList<>(slots);
+        sorted.sort((a, b) -> {
+            LocalTime ta = parseTimeSafe(a.getStartTime());
+            LocalTime tb = parseTimeSafe(b.getStartTime());
+            int cmp = ta.compareTo(tb);
+            if (cmp != 0) return cmp;
+            return Integer.compare(getSlotPriority(b), getSlotPriority(a));
+        });
+
+        List<TimetableSlot> clean = new ArrayList<>();
+
+        for (TimetableSlot slot : sorted) {
+            LocalTime start = parseTimeSafe(slot.getStartTime());
+            LocalTime end = parseTimeSafe(slot.getEndTime());
+            if (end.isBefore(start) || end.equals(start)) {
+                // Invalid slot duration, skip
+                continue;
+            }
+
+            if (clean.isEmpty()) {
+                clean.add(slot);
+                continue;
+            }
+
+            TimetableSlot prev = clean.get(clean.size() - 1);
+            LocalTime prevStart = parseTimeSafe(prev.getStartTime());
+            LocalTime prevEnd = parseTimeSafe(prev.getEndTime());
+
+            // Check if current slot overlaps with previous slot
+            if (start.isBefore(prevEnd)) {
+                boolean prevIsBreak = prev.getSlotType() == SlotType.BREAK;
+                boolean currIsBreak = slot.getSlotType() == SlotType.BREAK;
+                boolean prevIsMeal  = prev.getSlotType() != null && prev.getSlotType().isMeal();
+                boolean currIsMeal  = slot.getSlotType() != null && slot.getSlotType().isMeal();
+
+                // 1. Two breaks overlap (small break + meal, two small breaks, or two meals)
+                if ((prevIsBreak || prevIsMeal) && (currIsBreak || currIsMeal)) {
+                    if (prevIsMeal && currIsBreak) {
+                        // Drop small break in favor of meal break
+                        continue;
+                    } else if (prevIsBreak && currIsMeal) {
+                        // Replace small break with meal break
+                        clean.remove(clean.size() - 1);
+                        clean.add(slot);
+                        continue;
+                    } else if (prevIsMeal && currIsMeal) {
+                        // Lunch or Dinner takes precedence over Snack
+                        if (prev.getSlotType().isMajorMeal() && !slot.getSlotType().isMajorMeal()) {
+                            continue; // Skip the overlapping snack
+                        } else if (!prev.getSlotType().isMajorMeal() && slot.getSlotType().isMajorMeal()) {
+                            clean.remove(clean.size() - 1);
+                            clean.add(slot);
+                            continue;
+                        } else {
+                            // Shift current meal after previous meal
+                            long dur = Duration.between(start, end).toMinutes();
+                            start = prevEnd;
+                            end = start.plusMinutes(dur);
+                            slot.setStartTime(start.format(TIME_FORMATTER));
+                            slot.setEndTime(end.format(TIME_FORMATTER));
+                        }
+                    } else {
+                        // Two small breaks: keep the earlier one, skip the second
+                        continue;
+                    }
+                } else if (currIsBreak && !prevIsBreak) {
+                    // Small break overlapping a Study block or Zoom meeting: skip small break
+                    continue;
+                } else if (!currIsBreak && prevIsBreak) {
+                    // Study block or Zoom meeting overlapping a small break: replace small break
+                    clean.remove(clean.size() - 1);
+                    clean.add(slot);
+                    continue;
+                } else {
+                    // Study block overlapping a Meal or Zoom: shift study block to start after previous slot
+                    long dur = Duration.between(start, end).toMinutes();
+                    start = prevEnd;
+                    end = start.plusMinutes(dur);
+                    slot.setStartTime(start.format(TIME_FORMATTER));
+                    slot.setEndTime(end.format(TIME_FORMATTER));
+                }
+            }
+
+            // Omit any small break that directly abuts (< 15 mins) a preceding meal break
+            if (slot.getSlotType() == SlotType.BREAK && prev.getSlotType() != null && prev.getSlotType().isMeal()) {
+                if (Duration.between(prevEnd, start).toMinutes() < 15) {
+                    continue;
+                }
+            }
+
+            clean.add(slot);
+        }
+
+        // Final pass: prune any small break directly abutting (< 15 mins) a succeeding meal break
+        List<TimetableSlot> finalized = new ArrayList<>();
+        for (int i = 0; i < clean.size(); i++) {
+            TimetableSlot s = clean.get(i);
+            if (s.getSlotType() == SlotType.BREAK && i + 1 < clean.size()) {
+                TimetableSlot next = clean.get(i + 1);
+                if (next.getSlotType() != null && next.getSlotType().isMeal()) {
+                    LocalTime bEnd = parseTimeSafe(s.getEndTime());
+                    LocalTime mStart = parseTimeSafe(next.getStartTime());
+                    if (Duration.between(bEnd, mStart).toMinutes() < 15) {
+                        continue; // Skip small break directly abutting meal
+                    }
+                }
+            }
+            finalized.add(s);
+        }
+
+        return finalized;
+    }
+
+    private LocalTime parseTimeSafe(String timeStr) {
+        if (timeStr == null || timeStr.isBlank()) return LocalTime.of(0, 0);
+        try {
+            return LocalTime.parse(timeStr.trim(), TIME_FORMATTER);
+        } catch (Exception e) {
+            try {
+                return LocalTime.parse(timeStr.trim());
+            } catch (Exception ex) {
+                return LocalTime.of(0, 0);
+            }
+        }
+    }
+
+    private int getSlotPriority(TimetableSlot s) {
+        if (s == null || s.getSlotType() == null) return 0;
+        if (s.getSlotType() == SlotType.ZOOM_MEETING) return 50;
+        if (s.getSlotType().isMajorMeal()) return 40; // LUNCH, DINNER
+        if (s.getSlotType().isMeal()) return 30;      // SNACK, MEAL
+        if (s.getSlotType() == SlotType.STUDY) return 20;
+        return 10;                                    // BREAK
     }
 
     private boolean intervalsOverlap(LocalTime s1, LocalTime e1, LocalTime s2, LocalTime e2) {

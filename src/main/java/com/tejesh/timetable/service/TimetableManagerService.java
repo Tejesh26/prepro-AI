@@ -245,6 +245,18 @@ public class TimetableManagerService {
             );
             log.info("Pipeline Step 3B: Timetable after meal break insertion contains {} slot(s).",
                     generatedSlots.size());
+        } else {
+            // Deconflict slots to ensure no two breaks ever overlap even if meal breaks are disabled
+            Map<String, List<TimetableSlot>> byDay = new LinkedHashMap<>();
+            for (TimetableSlot s : generatedSlots) {
+                String d = s.getDayOfWeek() != null ? s.getDayOfWeek() : "Monday";
+                byDay.computeIfAbsent(d, k -> new ArrayList<>()).add(s);
+            }
+            List<TimetableSlot> deconflicted = new ArrayList<>();
+            for (List<TimetableSlot> dSlots : byDay.values()) {
+                deconflicted.addAll(mealBreakService.deconflictSchedule(dSlots));
+            }
+            generatedSlots = deconflicted;
         }
 
         // ── Step 4: Clear Old Schedule ────────────────────────────────────────

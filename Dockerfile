@@ -18,6 +18,9 @@ RUN mvn clean package -DskipTests
 FROM eclipse-temurin:17-jre
 WORKDIR /app
 
+# Ensure data directory exists with write permissions for persistent H2 storage
+RUN mkdir -p /app/data && chmod 777 /app/data
+
 # Copy the built jar from the builder stage
 COPY --from=builder /app/target/timetable.jar app.jar
 
